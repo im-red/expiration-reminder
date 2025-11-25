@@ -22,6 +22,8 @@ import {
   getRemainingDays,
   sortByRemainingLife
 } from './utils/reminderCalculations';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 
 const STORAGE_KEY = 'expiration-reminder:items';
 const INITIAL_DELAY_MS = 2000;
@@ -35,8 +37,11 @@ const App = () => {
   const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const overlayOpenRef = useRef(isOverlayOpen);
   const detailOpenRef = useRef(Boolean(activeReminderId));
+  const menuRef = useRef<HTMLDivElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setReminders(prev => {
@@ -72,6 +77,20 @@ const App = () => {
 
     initNotifications();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const sortedReminders = useMemo(
     () => [...reminders].sort(sortByRemainingLife),
@@ -206,6 +225,53 @@ const App = () => {
     [setReminders]
   );
 
+  const handleExportReminders = async () => {
+    const dataStr = JSON.stringify(reminders, null, 2);
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const fileName = `expiration-reminders-${Date.now()}.json`;
+        await Filesystem.writeFile({
+          path: fileName,
+          data: dataStr,
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8
+        });
+        alert(`Reminders exported to Documents/${fileName}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        alert('Failed to export reminders: ' + message);
+      }
+    } else {
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'expiration-reminders.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleImportReminders = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const imported = JSON.parse(e.target?.result as string);
+        if (Array.isArray(imported)) {
+          setReminders(imported);
+          alert('Reminders imported successfully!');
+        } else {
+          alert('Invalid file format.');
+        }
+      } catch {
+        alert('Failed to import reminders.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const openOverlay = () => {
     setIsOverlayOpen(true);
     setActiveReminderId(null);
@@ -276,13 +342,97 @@ const App = () => {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
+      <header className="app-header" style={{ position: 'relative' }}>
         <div>
           <p className="eyebrow">Expiration Reminder</p>
           <h1>Keep an eye on freshness</h1>
           <p className="subtitle">
             Track production dates, shelf life, and remaining freshness at a glance.
           </p>
+        </div>
+        <div style={{ position: 'absolute', top: 18, right: 18, zIndex: 20 }}>
+          <button
+            type="button"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '1.7rem',
+              color: 'white',
+              padding: 0,
+              margin: 0,
+              lineHeight: 1
+            }}
+            aria-label="Menu"
+            onClick={() => setIsMenuOpen(v => !v)}
+          >
+            &#x22EE;
+          </button>
+          {isMenuOpen && (
+            <div ref={menuRef} style={{
+              position: 'absolute',
+              top: 36,
+              right: 0,
+              background: 'white',
+              borderRadius: 12,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              minWidth: 160,
+              padding: '0.5rem 0',
+              display: 'flex',
+              flexDirection: 'column',
+              fontSize: '1rem',
+              fontWeight: 500
+            }}>
+              <button
+                type="button"
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: '0.75rem 1.25rem',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  color: '#222',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #eee',
+                  borderRadius: 0
+                }}
+                onClick={() => { handleExportReminders(); setIsMenuOpen(false); }}
+              >
+                Export Data
+              </button>
+              <button
+                type="button"
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: '0.75rem 1.25rem',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  color: '#222',
+                  cursor: 'pointer',
+                  borderRadius: 0,
+                  marginBottom: 0
+                }}
+                onClick={() => {
+                  if (importInputRef.current) importInputRef.current.click();
+                  setIsMenuOpen(false);
+                }}
+              >
+                Import Data
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json"
+                style={{ display: 'none' }}
+                onChange={handleImportReminders}
+              />
+            </div>
+          )}
         </div>
       </header>
 

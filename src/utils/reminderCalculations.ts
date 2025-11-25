@@ -5,7 +5,7 @@ export const MS_IN_DAY = 1000 * 60 * 60 * 24;
 export const getElapsedDays = (date: string) => {
   const producedAt = new Date(date);
   const elapsedMs = Date.now() - producedAt.getTime();
-  return Math.max(0, Math.floor(elapsedMs / MS_IN_DAY));
+  return Math.max(0, Math.ceil(elapsedMs / MS_IN_DAY));
 };
 
 export const getRemainingDays = (reminder: ReminderItem) =>
