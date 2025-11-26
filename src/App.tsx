@@ -8,8 +8,7 @@ import {
 } from '@capacitor/local-notifications';
 import {
   ReminderFormValues,
-  ReminderItem,
-  ReminderUpdate
+  ReminderItem
 } from './types/reminder';
 import clsx from 'clsx';
 import ReminderList from './components/ReminderList';
@@ -27,6 +26,8 @@ import { Capacitor } from '@capacitor/core';
 
 const STORAGE_KEY = 'expiration-reminder:items';
 const INITIAL_DELAY_MS = 2000;
+const VIEW_MODES = ['active', 'wasted', 'consumed'] as const;
+type ViewMode = typeof VIEW_MODES[number];
 
 const App = () => {
   const [reminders, setReminders] = useLocalStorageState<ReminderItem[]>(
@@ -34,7 +35,7 @@ const App = () => {
     []
   );
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
+  const [viewMode, setViewMode] = useState<ViewMode>('active');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,23 +46,46 @@ const App = () => {
 
   useEffect(() => {
     setReminders(prev => {
-      const needsMigration = prev.some(
-        reminder =>
-          typeof reminder.category === 'undefined' ||
-          typeof reminder.archived === 'undefined'
-      );
-      if (!needsMigration) {
-        return prev;
-      }
-
-      return prev.map(reminder => ({
-        ...reminder,
-        category: reminder.category ?? '',
-        archived: reminder.archived ?? false,
-        archivedAt: typeof reminder.archivedAt === 'undefined' ? null : reminder.archivedAt
-      }));
+      let needsMigration = false;
+      const migrated = prev.map(reminder => {
+        let updated = { ...reminder };
+        // Migrate category
+        if (typeof updated.category === 'undefined') {
+          updated.category = '';
+          needsMigration = true;
+        }
+        // Migrate wasted/consumed from archived
+        if ((updated as any).archived) {
+          updated.wasted = true;
+          updated.wastedAt = (updated as any).archivedAt ?? null;
+          needsMigration = true;
+        }
+        // Ensure wasted/consumed/price fields exist
+        if (typeof updated.wasted === 'undefined') {
+          updated.wasted = false;
+          needsMigration = true;
+        }
+        if (typeof updated.wastedAt === 'undefined') {
+          updated.wastedAt = null;
+          needsMigration = true;
+        }
+        if (typeof updated.consumed === 'undefined') {
+          updated.consumed = false;
+          needsMigration = true;
+        }
+        if (typeof updated.consumedAt === 'undefined') {
+          updated.consumedAt = null;
+          needsMigration = true;
+        }
+        if (typeof updated.price === 'undefined') {
+          updated.price = undefined;
+          needsMigration = true;
+        }
+        return updated;
+      });
+      return needsMigration ? migrated : prev;
     });
-  }, [setReminders]);
+  }, []);
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -98,12 +122,17 @@ const App = () => {
   );
 
   const activeReminders = useMemo(
-    () => sortedReminders.filter(reminder => !reminder.archived),
+    () => sortedReminders.filter(reminder => !reminder.wasted && !reminder.consumed),
     [sortedReminders]
   );
 
-  const archivedReminders = useMemo(
-    () => sortedReminders.filter(reminder => reminder.archived),
+  const wastedReminders = useMemo(
+    () => sortedReminders.filter(reminder => reminder.wasted),
+    [sortedReminders]
+  );
+
+  const consumedReminders = useMemo(
+    () => sortedReminders.filter(reminder => reminder.consumed),
     [sortedReminders]
   );
 
@@ -111,19 +140,40 @@ const App = () => {
     if (!selectedCategory) {
       return activeReminders;
     }
-
     return activeReminders.filter(reminder => reminder.category === selectedCategory);
   }, [activeReminders, selectedCategory]);
 
+  const filteredWastedReminders = useMemo(() => {
+    if (!selectedCategory) return wastedReminders;
+    return wastedReminders.filter(reminder => reminder.category === selectedCategory);
+  }, [wastedReminders, selectedCategory]);
+
+  const filteredConsumedReminders = useMemo(() => {
+    if (!selectedCategory) return consumedReminders;
+    return consumedReminders.filter(reminder => reminder.category === selectedCategory);
+  }, [consumedReminders, selectedCategory]);
+
+  // Only show categories for current state
   const categories = useMemo(() => {
+    let source: ReminderItem[] = [];
+    if (viewMode === 'active') source = activeReminders;
+    else if (viewMode === 'wasted') source = wastedReminders;
+    else if (viewMode === 'consumed') source = consumedReminders;
     const unique = Array.from(
-      new Set(activeReminders.map(reminder => reminder.category).filter(Boolean))
+      new Set(source.map(reminder => reminder.category).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b));
     return unique;
-  }, [activeReminders]);
+  }, [viewMode, activeReminders, wastedReminders, consumedReminders]);
 
-  const displayedReminders =
-    viewMode === 'active' ? filteredActiveReminders : archivedReminders;
+  let displayedReminders: ReminderItem[] = [];
+  if (viewMode === 'active') displayedReminders = filteredActiveReminders;
+  else if (viewMode === 'wasted') displayedReminders = filteredWastedReminders;
+  else if (viewMode === 'consumed') displayedReminders = filteredConsumedReminders;
+
+  // Price sum
+  const totalPrice = useMemo(() => {
+    return displayedReminders.reduce((sum, r) => sum + (r.price ?? 0), 0);
+  }, [displayedReminders]);
 
   const activeReminder = useMemo(
     () => reminders.find(reminder => reminder.id === activeReminderId) ?? null,
@@ -135,12 +185,12 @@ const App = () => {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
       ...values,
       category: values.category ?? '',
-      archived: false,
-      archivedAt: null
+      wasted: false,
+      wastedAt: null,
+      consumed: false,
+      consumedAt: null,
     };
-
     setReminders(prev => [newReminder, ...prev]);
-
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
     } catch (error) {
@@ -168,22 +218,16 @@ const App = () => {
   );
 
   useEffect(() => {
-    scheduleReminderNotifications(reminders.filter(reminder => !reminder.archived));
+    scheduleReminderNotifications(reminders.filter(reminder => !reminder.wasted && !reminder.consumed));
   }, [reminders, scheduleReminderNotifications]);
 
   const handleUpdateReminder = useCallback(
-    async (id: string, updates: ReminderUpdate) => {
-      const normalizedUpdates: ReminderUpdate = {
-        ...updates,
-        category: updates.category ?? ''
-      };
-
+    async (id: string, updates: Partial<ReminderItem>) => {
       setReminders(prev =>
         prev.map(reminder =>
-          reminder.id === id ? { ...reminder, ...normalizedUpdates } : reminder
+          reminder.id === id ? { ...reminder, ...updates } : reminder
         )
       );
-
       try {
         await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
@@ -199,25 +243,6 @@ const App = () => {
 
       try {
         await Haptics.impact({ style: ImpactStyle.Heavy });
-      } catch (error) {
-        console.warn('Unable to trigger haptic feedback', error);
-      }
-    },
-    [setReminders]
-  );
-
-  const handleArchiveReminder = useCallback(
-    async (id: string) => {
-      setReminders(prev =>
-        prev.map(reminder =>
-          reminder.id === id
-            ? { ...reminder, archived: true, archivedAt: new Date().toISOString() }
-            : reminder
-        )
-      );
-
-      try {
-        await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         console.warn('Unable to trigger haptic feedback', error);
       }
@@ -254,6 +279,7 @@ const App = () => {
 
   const handleImportReminders = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('Importing file:', file);
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
@@ -261,13 +287,20 @@ const App = () => {
         const imported = JSON.parse(e.target?.result as string);
         if (Array.isArray(imported)) {
           setReminders(imported);
+          console.log('Reminders imported:', imported);
           alert('Reminders imported successfully!');
         } else {
+          console.error('Invalid file format:', imported);
           alert('Invalid file format.');
         }
-      } catch {
+      } catch (err) {
+        console.error('Failed to import reminders:', err);
         alert('Failed to import reminders.');
       }
+    };
+    reader.onerror = err => {
+      console.error('File read error:', err);
+      alert('Failed to read file.');
     };
     reader.readAsText(file);
   };
@@ -279,6 +312,7 @@ const App = () => {
 
   const closeOverlay = () => setIsOverlayOpen(false);
 
+  // Allow item state modification in all views
   const openDetail = (reminder: ReminderItem) => {
     setActiveReminderId(reminder.id);
     setIsOverlayOpen(false);
@@ -335,7 +369,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (viewMode === 'archived') {
+    if (viewMode !== 'active') {
       setSelectedCategory('');
     }
   }, [viewMode]);
@@ -368,6 +402,13 @@ const App = () => {
           >
             &#x22EE;
           </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json"
+            style={{ display: 'none' }}
+            onChange={handleImportReminders}
+          />
           {isMenuOpen && (
             <div ref={menuRef} style={{
               position: 'absolute',
@@ -418,19 +459,13 @@ const App = () => {
                   marginBottom: 0
                 }}
                 onClick={() => {
+                  console.log('Importing file', importInputRef.current);
                   if (importInputRef.current) importInputRef.current.click();
                   setIsMenuOpen(false);
                 }}
               >
                 Import Data
               </button>
-              <input
-                ref={importInputRef}
-                type="file"
-                accept="application/json"
-                style={{ display: 'none' }}
-                onChange={handleImportReminders}
-              />
             </div>
           )}
         </div>
@@ -445,39 +480,53 @@ const App = () => {
               onClick={() => setViewMode('active')}
             >
               <div>
-                <p className="view-switch__label">Active items</p>
+                <p className="view-switch__label">Active</p>
                 <p className="view-switch__count">{activeReminders.length}</p>
               </div>
             </button>
             <button
               type="button"
-              className={clsx('view-switch__card', { active: viewMode === 'archived' })}
-              onClick={() => setViewMode('archived')}
+              className={clsx('view-switch__card', { active: viewMode === 'wasted' })}
+              onClick={() => setViewMode('wasted')}
             >
               <div>
-                <p className="view-switch__label">Archived</p>
-                <p className="view-switch__count">{archivedReminders.length}</p>
+                <p className="view-switch__label">Wasted</p>
+                <p className="view-switch__count">{wastedReminders.length}</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              className={clsx('view-switch__card', { active: viewMode === 'consumed' })}
+              onClick={() => setViewMode('consumed')}
+            >
+              <div>
+                <p className="view-switch__label">Consumed</p>
+                <p className="view-switch__count">{consumedReminders.length}</p>
               </div>
             </button>
           </div>
 
-          {viewMode === 'active' ? (
+          {viewMode !== 'active' || categories.length ? (
             <CategoryFilter
               categories={categories}
               selectedCategory={selectedCategory}
               onChange={setSelectedCategory}
             />
           ) : null}
-
+          <div style={{ fontWeight: 600, fontSize: '0.8rem'}}>
+            {`Total price: ￥${totalPrice.toFixed(2)}`}
+          </div>
           <ReminderList
             items={displayedReminders}
             onSelect={openDetail}
             emptyMessage={
-              viewMode === 'archived'
-                ? 'No archived items yet.'
-                : selectedCategory
-                  ? 'Nothing in this category yet. Try adding one!'
-                  : undefined
+              viewMode === 'wasted'
+                ? 'No wasted items yet.'
+                : viewMode === 'consumed'
+                  ? 'No consumed items yet.'
+                  : selectedCategory
+                    ? 'Nothing in this category yet. Try adding one!'
+                    : undefined
             }
           />
 
@@ -504,7 +553,6 @@ const App = () => {
         onClose={closeDetail}
         onUpdate={handleUpdateReminder}
         onDelete={handleDeleteReminder}
-        onArchive={handleArchiveReminder}
       />
     </div>
   );
@@ -515,7 +563,7 @@ const buildNotificationPayload = (items: ReminderItem[]): LocalNotificationSchem
 
   return items
     .map((item, index) => {
-      if (item.archived) {
+      if (item.wasted || item.consumed) {
         return null;
       }
 

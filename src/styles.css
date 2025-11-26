@@ -233,7 +233,7 @@ input:focus {
 
 .view-switch {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
@@ -259,7 +259,7 @@ input:focus {
 }
 
 .view-switch__label {
-  font-size: 0.85rem;
+  font-size: 0.80rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.85;
@@ -396,11 +396,6 @@ input:focus {
   cursor: pointer;
 }
 
-.pill-button--danger {
-  background-color: rgba(220, 38, 38, 0.12);
-  color: #b91c1c;
-}
-
 .overlay {
   position: fixed;
   inset: 0;
@@ -459,6 +454,11 @@ input:focus {
   padding: 0.3rem 0.9rem;
   border-radius: 999px;
   cursor: pointer;
+}
+
+.overlay-action--danger {
+  background-color: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
 }
 
 @keyframes scale-in {

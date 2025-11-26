@@ -24,7 +24,13 @@ const ReminderForm = ({
   const [shelfLifeDays, setShelfLifeDays] = useState(
     defaultValues?.shelfLifeDays?.toString() ?? ''
   );
+  const [price, setPrice] = useState(defaultValues?.price?.toString() ?? '');
   const [error, setError] = useState<string | null>(null);
+
+  const todayLocal = new Date();
+  const maxDate = todayLocal.getFullYear() + '-' +
+    String(todayLocal.getMonth() + 1).padStart(2, '0') + '-' +
+    String(todayLocal.getDate()).padStart(2, '0');
 
   useEffect(() => {
     if (!defaultValues) {
@@ -35,6 +41,7 @@ const ReminderForm = ({
     setCategory(defaultValues.category ?? '');
     setProductionDate(defaultValues.productionDate);
     setShelfLifeDays(defaultValues.shelfLifeDays.toString());
+    setPrice(defaultValues.price?.toString() ?? '');
   }, [defaultValues]);
 
   const isValid = useMemo(() => {
@@ -60,7 +67,8 @@ const ReminderForm = ({
       name: name.trim(),
       category: category.trim(),
       productionDate,
-      shelfLifeDays: Number(shelfLifeDays)
+      shelfLifeDays: Number(shelfLifeDays),
+      price: price ? Number(price) : undefined
     });
 
     if (!defaultValues) {
@@ -68,6 +76,7 @@ const ReminderForm = ({
       setCategory('');
       setProductionDate('');
       setShelfLifeDays('');
+      setPrice('');
     }
   };
 
@@ -118,7 +127,7 @@ const ReminderForm = ({
           type="date"
           value={productionDate}
           onChange={event => setProductionDate(event.target.value)}
-          max={new Date().toISOString().split('T')[0]}
+          max={maxDate}
           required
         />
       </div>
@@ -134,6 +143,20 @@ const ReminderForm = ({
           value={shelfLifeDays}
           onChange={event => setShelfLifeDays(event.target.value)}
           required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="price">Price (optional)</label>
+        <input
+          id="price"
+          name="price"
+          type="number"
+          min={0}
+          step="0.01"
+          placeholder="0.00"
+          value={price}
+          onChange={event => setPrice(event.target.value)}
         />
       </div>
 

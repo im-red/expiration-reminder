@@ -13,9 +13,8 @@ interface ReminderDetailOverlayProps {
   reminder: ReminderItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (id: string, values: ReminderFormValues) => Promise<void> | void;
+  onUpdate: (id: string, updates: Partial<ReminderItem>) => Promise<void> | void;
   onDelete: (id: string) => Promise<void> | void;
-  onArchive: (id: string) => Promise<void> | void;
 }
 
 const ReminderDetailOverlay = ({
@@ -23,8 +22,7 @@ const ReminderDetailOverlay = ({
   isOpen,
   onClose,
   onUpdate,
-  onDelete,
-  onArchive
+  onDelete
 }: ReminderDetailOverlayProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -44,7 +42,9 @@ const ReminderDetailOverlay = ({
         percent: 0,
         isExpired: false,
         expirationDate: null as Date | null,
-        canArchive: false
+        canMarkWasted: false,
+        canMarkConsumed: false,
+        canMarkActive: false
       };
     }
 
@@ -52,16 +52,18 @@ const ReminderDetailOverlay = ({
     const percent = computeRemainingPercent(remainingDays, reminder.shelfLifeDays);
     const isExpired = remainingDays <= 0;
     const expirationDate = addDays(new Date(reminder.productionDate), reminder.shelfLifeDays);
-    const canArchive = isExpired && !reminder.archived;
+    const canMarkWasted = !reminder.wasted;
+    const canMarkConsumed = !reminder.consumed;
+    const canMarkActive = reminder.wasted || reminder.consumed;
 
-    return { remainingDays, percent, isExpired, expirationDate, canArchive };
+    return { remainingDays, percent, isExpired, expirationDate, canMarkWasted, canMarkConsumed, canMarkActive };
   }, [reminder]);
 
   if (!isOpen || !reminder) {
     return null;
   }
 
-  const { remainingDays, percent, isExpired, expirationDate, canArchive } = derived;
+  const { remainingDays, percent, isExpired, expirationDate, canMarkWasted, canMarkConsumed, canMarkActive } = derived;
 
   const handleSubmit = async (values: ReminderFormValues) => {
     await onUpdate(reminder.id, values);
@@ -79,13 +81,18 @@ const ReminderDetailOverlay = ({
     onClose();
   };
 
-  const handleArchive = async () => {
-    const shouldArchive = window.confirm('Archive this expired item?');
-    if (!shouldArchive) {
-      return;
-    }
+  const handleMarkWasted = async () => {
+    await onUpdate(reminder.id, { wasted: true, wastedAt: new Date().toISOString(), consumed: false, consumedAt: null });
+    onClose();
+  };
 
-    await onArchive(reminder.id);
+  const handleMarkConsumed = async () => {
+    await onUpdate(reminder.id, { consumed: true, consumedAt: new Date().toISOString(), wasted: false, wastedAt: null });
+    onClose();
+  };
+
+  const handleMarkActive = async () => {
+    await onUpdate(reminder.id, { wasted: false, wastedAt: null, consumed: false, consumedAt: null });
     onClose();
   };
 
@@ -98,13 +105,22 @@ const ReminderDetailOverlay = ({
             &lt; Back
           </button>
           {!isEditing && (
-            <button
-              type="button"
-              className="overlay-action"
-              onClick={() => setIsEditing(true)}
-            >
-              Edit
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="overlay-action overlay-action--danger"
+                onClick={handleDelete}
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                className="overlay-action"
+                onClick={() => setIsEditing(true)}
+              >
+                Edit
+              </button>
+            </div>
           )}
         </div>
 
@@ -121,7 +137,7 @@ const ReminderDetailOverlay = ({
             <header className="reminder-detail__header">
               <div>
                 <p className="reminder-detail__label">Item</p>
-                <h2>{reminder.name}</h2>
+                <h2>{reminder.name}{reminder.price ? ` - ￥${reminder.price.toFixed(2)}` : ''}</h2>
               </div>
               <p className={clsx('reminder-detail__status', { expired: isExpired })}>
                 {formatRemainingLife(remainingDays)}
@@ -160,28 +176,41 @@ const ReminderDetailOverlay = ({
               <div>
                 <dt>Estimated expiration</dt>
                 <dd>
-                  {expirationDate.toLocaleDateString(undefined, {
+                  {expirationDate ? expirationDate.toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
-                  })}
+                  }) : 'N/A'}
                 </dd>
               </div>
             </dl>
 
             <div className="reminder-detail__actions">
-              {canArchive ? (
-                <button type="button" className="pill-button" onClick={handleArchive}>
-                  Archive item
+              {canMarkActive ? (
+                <button type="button" className="pill-button" onClick={handleMarkActive}>
+                  Mark as active
                 </button>
               ) : null}
-              <button
-                type="button"
-                className="pill-button pill-button--danger"
-                onClick={handleDelete}
-              >
-                Delete item
-              </button>
+              {reminder.wasted && (
+                <button type="button" className="pill-button" onClick={handleMarkConsumed}>
+                  Mark as consumed
+                </button>
+              )}
+              {reminder.consumed && (
+                <button type="button" className="pill-button" onClick={handleMarkWasted}>
+                  Mark as wasted
+                </button>
+              )}
+              {!reminder.wasted && !reminder.consumed && (
+                <>
+                  <button type="button" className="pill-button" onClick={handleMarkWasted}>
+                    Mark as wasted
+                  </button>
+                  <button type="button" className="pill-button" onClick={handleMarkConsumed}>
+                    Mark as consumed
+                  </button>
+                </>
+              )}
             </div>
           </article>
         )}

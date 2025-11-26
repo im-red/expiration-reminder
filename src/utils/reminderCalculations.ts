@@ -3,9 +3,12 @@ import { ReminderItem } from '../types/reminder';
 export const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
 export const getElapsedDays = (date: string) => {
-  const producedAt = new Date(date);
+  // Support both 'YYYY-MM-DD' and 'YYYY/MM/DD' formats
+  const [year, month, day] = date.split(/[-\/]/).map(Number);
+  const producedAt = new Date(year, month - 1, day, 0, 0, 0, 0);
   const elapsedMs = Date.now() - producedAt.getTime();
-  return Math.max(0, Math.ceil(elapsedMs / MS_IN_DAY));
+  // console.log('date:', date, 'producedAt:', producedAt, 'now:', new Date(), 'elapsedMs:', elapsedMs, 'elapsedDays:', Math.floor(elapsedMs / MS_IN_DAY));
+  return Math.max(0, Math.floor(elapsedMs / MS_IN_DAY));
 };
 
 export const getRemainingDays = (reminder: ReminderItem) =>
