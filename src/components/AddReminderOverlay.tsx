@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import ReminderForm from './ReminderForm';
 import { ReminderFormValues } from '../types/reminder';
 
@@ -8,6 +9,18 @@ interface AddReminderOverlayProps {
 }
 
 const AddReminderOverlay = ({ isOpen, onClose, onSubmit }: AddReminderOverlayProps) => {
+  useEffect(() => {
+    console.log('isOpen changed:', isOpen);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
