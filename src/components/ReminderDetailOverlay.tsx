@@ -148,7 +148,7 @@ const ReminderDetailOverlay = ({
             <header className="reminder-detail__header">
               <div>
                 <p className="reminder-detail__label">Item</p>
-                <h2>{reminder.name}{reminder.price ? ` - ￥${reminder.price.toFixed(2)}` : ''}</h2>
+                <h2>{reminder.name}</h2>
               </div>
               <p className={clsx('reminder-detail__status', { expired: isExpired })}>
                 {formatRemainingLife(remainingDays)}
@@ -166,6 +166,10 @@ const ReminderDetailOverlay = ({
             </div>
 
             <dl className="reminder-detail__meta">
+              <div style={{ display: reminder.price ? 'grid' : 'none' }}>
+                <dt>Price</dt>
+                <dd>{reminder.price ? `￥${reminder.price.toFixed(2)}` : ''}</dd>
+              </div>
               <div>
                 <dt>Category</dt>
                 <dd>{reminder.category || 'Uncategorized'}</dd>

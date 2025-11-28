@@ -35,15 +35,18 @@ const ReminderList = ({ items, onSelect, emptyMessage }: ReminderListProps) => {
             <li key={item.id}>
               <button type="button" className="reminder-row" onClick={() => onSelect(item)}>
                 <div className="reminder-row__top">
-                  <span className="reminder-row__name">{item.name}</span>
-                  <span
-                    className={clsx('reminder-row__life', {
-                      expired: isExpired,
-                      warning: isLow
-                    })}
-                  >
-                    {formatRemainingLife(remainingDays)}
+                  <span style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                    <span className="reminder-row__name">{item.name}</span>
+                    <span
+                      className={clsx('reminder-row__life', {
+                        expired: isExpired,
+                        warning: isLow
+                      })}
+                    >
+                      {formatRemainingLife(remainingDays)}
+                    </span>
                   </span>
+                  <span className="reminder-row__price">{item.price ? `￥${item.price.toFixed(2)}` : ''}</span>
                 </div>
                 <div className="progress-bar progress-bar--sm">
                   <div

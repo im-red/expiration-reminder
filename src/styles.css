@@ -210,6 +210,7 @@ input:focus {
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
 }
 
 .reminder-row__name {
@@ -229,6 +230,11 @@ input:focus {
 
 .reminder-row__life.expired {
   color: #dc2626;
+}
+
+.reminder-row__price {
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .view-switch {
