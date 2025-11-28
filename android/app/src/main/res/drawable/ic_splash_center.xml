@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <!-- gravity="center" keeps it in the middle -->
+        <!-- height/width sets the size relative to the container -->
+        <bitmap
+            android:src="@mipmap/ic_launcher_foreground"
+            android:gravity="center"
+            android:height="192dp"
+            android:width="192dp" />
+    </item>
+</layer-list>
