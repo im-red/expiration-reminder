@@ -37,26 +37,30 @@ const ReminderList = ({ items, onSelect, emptyMessage }: ReminderListProps) => {
                 <div className="reminder-row__top">
                   <span style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
                     <span className="reminder-row__name">{item.name}</span>
-                    <span
-                      className={clsx('reminder-row__life', {
-                        expired: isExpired,
-                        warning: isLow
-                      })}
-                    >
-                      {formatRemainingLife(remainingDays)}
-                    </span>
+                    {!item.wasted && !item.consumed && (
+                      <span
+                        className={clsx('reminder-row__life', {
+                          expired: isExpired,
+                          warning: isLow
+                        })}
+                      >
+                        {formatRemainingLife(remainingDays)}
+                      </span>
+                    )}
                   </span>
                   <span className="reminder-row__price">{item.price ? `￥${item.price.toFixed(2)}` : ''}</span>
                 </div>
-                <div className="progress-bar progress-bar--sm">
-                  <div
-                    className={clsx('progress-bar__fill', {
-                      'is-low': percent <= 25,
-                      'is-expired': isExpired
-                    })}
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
+                {!item.wasted && !item.consumed && (
+                  <div className="progress-bar progress-bar--sm">
+                    <div
+                      className={clsx('progress-bar__fill', {
+                        'is-low': percent <= 25,
+                        'is-expired': isExpired
+                      })}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                )}
               </button>
             </li>
           );
