@@ -184,6 +184,18 @@ const ReminderDetailOverlay = ({
                   })}
                 </dd>
               </div>
+              {reminder.purchaseDate ? (
+                <div>
+                  <dt>Purchase date</dt>
+                  <dd>
+                    {new Date(reminder.purchaseDate).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Shelf life</dt>
                 <dd>{reminder.shelfLifeDays} days</dd>

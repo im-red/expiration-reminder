@@ -16,10 +16,24 @@ const ReminderForm = ({
   title,
   subtitle
 }: ReminderFormProps) => {
+  const getTodayLocal = () => {
+    const d = new Date();
+    return (
+      d.getFullYear() +
+      '-' +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(d.getDate()).padStart(2, '0')
+    );
+  };
+
   const [name, setName] = useState(defaultValues?.name ?? '');
   const [category, setCategory] = useState(defaultValues?.category ?? '');
   const [productionDate, setProductionDate] = useState(
     defaultValues?.productionDate ?? ''
+  );
+  const [purchaseDate, setPurchaseDate] = useState<string | undefined>(
+    defaultValues?.purchaseDate ?? (defaultValues ? undefined : getTodayLocal())
   );
   const [shelfLifeDays, setShelfLifeDays] = useState(
     defaultValues?.shelfLifeDays?.toString() ?? ''
@@ -27,10 +41,7 @@ const ReminderForm = ({
   const [price, setPrice] = useState(defaultValues?.price?.toString() ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  const todayLocal = new Date();
-  const maxDate = todayLocal.getFullYear() + '-' +
-    String(todayLocal.getMonth() + 1).padStart(2, '0') + '-' +
-    String(todayLocal.getDate()).padStart(2, '0');
+  const maxDate = getTodayLocal();
 
   useEffect(() => {
     if (!defaultValues) {
@@ -40,6 +51,7 @@ const ReminderForm = ({
     setName(defaultValues.name);
     setCategory(defaultValues.category ?? '');
     setProductionDate(defaultValues.productionDate);
+    setPurchaseDate(defaultValues.purchaseDate ?? undefined);
     setShelfLifeDays(defaultValues.shelfLifeDays.toString());
     setPrice(defaultValues.price?.toString() ?? '');
   }, [defaultValues]);
@@ -67,6 +79,7 @@ const ReminderForm = ({
       name: name.trim(),
       category: category.trim(),
       productionDate,
+      purchaseDate: purchaseDate ?? getTodayLocal(),
       shelfLifeDays: Number(shelfLifeDays),
       price: price ? Number(price) : undefined
     });
@@ -75,6 +88,7 @@ const ReminderForm = ({
       setName('');
       setCategory('');
       setProductionDate('');
+      setPurchaseDate(getTodayLocal());
       setShelfLifeDays('');
       setPrice('');
     }
@@ -129,6 +143,18 @@ const ReminderForm = ({
           onChange={event => setProductionDate(event.target.value)}
           max={maxDate}
           required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="purchaseDate">Purchase date (optional)</label>
+        <input
+          id="purchaseDate"
+          name="purchaseDate"
+          type="date"
+          value={purchaseDate ?? ''}
+          onChange={event => setPurchaseDate(event.target.value)}
+          max={maxDate}
         />
       </div>
 
