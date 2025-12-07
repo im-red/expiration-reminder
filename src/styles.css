@@ -2,6 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 :root {
@@ -43,6 +44,14 @@ body {
   font-size: 1.9rem;
   font-weight: 600;
   margin-top: 0.4rem;
+}
+
+
+button:active,
+input[type="submit"]:active,
+.clickable:active,
+.btn-primary:active {
+  background-color: rgba(66, 133, 244, 0.3);
 }
 
 .eyebrow {
