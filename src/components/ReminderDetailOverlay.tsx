@@ -150,9 +150,11 @@ const ReminderDetailOverlay = ({
                 <p className="reminder-detail__label">Item</p>
                 <h2>{reminder.name}</h2>
               </div>
-              <p className={clsx('reminder-detail__status', { expired: isExpired })}>
-                {formatRemainingLife(remainingDays)}
-              </p>
+              {!reminder.wasted && !reminder.consumed ? (
+                <p className={clsx('reminder-detail__status', { expired: isExpired })}>
+                  {formatRemainingLife(remainingDays)}
+                </p>
+              ) : null}
             </header>
 
             <div className="progress-bar progress-bar--lg">
