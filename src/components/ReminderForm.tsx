@@ -32,7 +32,7 @@ const ReminderForm = ({
   const [name, setName] = useState(defaultValues?.name ?? '');
   const [category, setCategory] = useState(defaultValues?.category ?? (selectedCategory ?? ''));
   const [productionDate, setProductionDate] = useState(
-    defaultValues?.productionDate ?? getTodayLocal()
+    defaultValues?.productionDate ?? ''
   );
   const [purchaseDate, setPurchaseDate] = useState<string | undefined>(
     defaultValues?.purchaseDate ?? (defaultValues ? undefined : getTodayLocal())
@@ -44,7 +44,6 @@ const ReminderForm = ({
   const [error, setError] = useState<string | null>(null);
 
   const maxDate = getTodayLocal();
-  const defaultShelfLifeDays = 30;
 
   useEffect(() => {
     if (!defaultValues) {
@@ -53,19 +52,19 @@ const ReminderForm = ({
 
     setName(defaultValues.name);
     setCategory(defaultValues.category ?? '');
-    setProductionDate(defaultValues.productionDate);
+    setProductionDate(defaultValues.productionDate ?? '');
     setPurchaseDate(defaultValues.purchaseDate ?? undefined);
-    setShelfLifeDays(defaultValues.shelfLifeDays.toString());
+    setShelfLifeDays(defaultValues.shelfLifeDays?.toString() ?? '');
     setPrice(defaultValues.price?.toString() ?? '');
   }, [defaultValues]);
 
   const isValid = useMemo(() => {
-    if (!name.trim() || !productionDate) {
+    if (!name.trim()) {
       return false;
     }
 
     if (!shelfLifeDays) {
-      // use defaultShelfLifeDays if empty
+      // empty is allowed (optional shelf life)
       return true;
     }
 
@@ -86,9 +85,9 @@ const ReminderForm = ({
     await onSubmit({
       name: name.trim(),
       category: category.trim(),
-      productionDate,
+      productionDate: productionDate ?? undefined,
       purchaseDate: purchaseDate ?? getTodayLocal(),
-      shelfLifeDays: !shelfLifeDays ? defaultShelfLifeDays : Number(shelfLifeDays),
+      shelfLifeDays: shelfLifeDays ? Number(shelfLifeDays) : undefined,
       price: price ? Number(price) : undefined
     });
 
@@ -107,7 +106,7 @@ const ReminderForm = ({
     subtitle ??
     (defaultValues
       ? 'Update the freshness metadata below.'
-      : 'Enter the production date and shelf life to start tracking.');
+      : 'Optionally enter production date and/or shelf life to start tracking.');
 
   return (
     <form className="card reminder-form" onSubmit={handleSubmit}>
@@ -150,7 +149,6 @@ const ReminderForm = ({
           value={productionDate}
           onChange={event => setProductionDate(event.target.value)}
           max={maxDate}
-          required
         />
       </div>
 
@@ -167,13 +165,13 @@ const ReminderForm = ({
       </div>
 
       <div className="form-group">
-        <label htmlFor="shelfLifeDays">Shelf life (days)</label>
+        <label htmlFor="shelfLifeDays">Shelf life (days) (optional)</label>
         <input
           id="shelfLifeDays"
           name="shelfLifeDays"
           type="number"
           min={1}
-          placeholder={defaultShelfLifeDays.toString()}
+          placeholder="30"
           value={shelfLifeDays}
           onChange={event => setShelfLifeDays(event.target.value)}
         />

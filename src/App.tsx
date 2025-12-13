@@ -671,6 +671,9 @@ const buildNotificationPayload = (items: ReminderItem[]): LocalNotificationSchem
       }
 
       const remainingDays = getRemainingDays(item);
+      if (typeof item.shelfLifeDays === 'undefined' || !item.productionDate) {
+        return null;
+      }
       const alertOffset = Math.max(item.shelfLifeDays - 29, 0);
       const alertDate = addDays(new Date(item.productionDate), alertOffset);
 

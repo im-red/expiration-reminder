@@ -11,10 +11,21 @@ export const getElapsedDays = (date: string) => {
   return Math.max(0, Math.floor(elapsedMs / MS_IN_DAY));
 };
 
-export const getRemainingDays = (reminder: ReminderItem) =>
-  reminder.shelfLifeDays - getElapsedDays(reminder.productionDate);
+export const getRemainingDays = (reminder: ReminderItem) => {
+  if (
+    typeof reminder.shelfLifeDays === 'undefined' ||
+    reminder.shelfLifeDays === null ||
+    !reminder.productionDate
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return reminder.shelfLifeDays - getElapsedDays(reminder.productionDate);
+};
 
 export const formatRemainingLife = (remainingDays: number) => {
+  if (!Number.isFinite(remainingDays)) {
+    return '';
+  }
   if (remainingDays <= 0) {
     return 'Expired';
   }
@@ -28,8 +39,12 @@ export const formatRemainingLife = (remainingDays: number) => {
 
 export const computeRemainingPercent = (
   remainingDays: number,
-  shelfLifeDays: number
+  shelfLifeDays?: number
 ) => {
+  if (typeof shelfLifeDays === 'undefined' || shelfLifeDays === null) {
+    return 100;
+  }
+
   if (shelfLifeDays <= 0) {
     return 0;
   }
@@ -47,10 +62,11 @@ export const sortByName = (a: ReminderItem, b: ReminderItem) =>
   a.name.toLowerCase().localeCompare(b.name.toLowerCase());
 
 export const sortByShelfLife = (a: ReminderItem, b: ReminderItem) =>
-  a.shelfLifeDays - b.shelfLifeDays;
+  (a.shelfLifeDays ?? Number.POSITIVE_INFINITY) - (b.shelfLifeDays ?? Number.POSITIVE_INFINITY);
 
 export const sortByProductionDate = (a: ReminderItem, b: ReminderItem) =>
-  new Date(b.productionDate).getTime() - new Date(a.productionDate).getTime();
+  (b.productionDate ? new Date(b.productionDate).getTime() : 0) -
+  (a.productionDate ? new Date(a.productionDate).getTime() : 0);
 
 export const sortByPurchaseDate = (a: ReminderItem, b: ReminderItem) =>
   // Handle undefined purchaseDate: treat undefined as older than any date (so it sorts last)

@@ -1,9 +1,9 @@
 export interface ReminderFormValues {
   name: string;
   category: string;
-  productionDate: string;
+  productionDate?: string;
   purchaseDate?: string;
-  shelfLifeDays: number;
+  shelfLifeDays?: number;
   price?: number;
 }
 

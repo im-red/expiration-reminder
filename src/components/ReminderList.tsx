@@ -37,7 +37,7 @@ const ReminderList = ({ items, onSelect, emptyMessage }: ReminderListProps) => {
                 <div className="reminder-row__top">
                   <span style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
                     <span className="reminder-row__name">{item.name}</span>
-                    {!item.wasted && !item.consumed && (
+                    {!item.wasted && !item.consumed && typeof item.shelfLifeDays !== 'undefined' && typeof item.productionDate !== 'undefined' && (
                       <span
                         className={clsx('reminder-row__life', {
                           expired: isExpired,

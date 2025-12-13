@@ -62,7 +62,7 @@ const ReminderDetailOverlay = ({
     const remainingDays = getRemainingDays(reminder);
     const percent = computeRemainingPercent(remainingDays, reminder.shelfLifeDays);
     const isExpired = remainingDays <= 0;
-    const expirationDate = addDays(new Date(reminder.productionDate), reminder.shelfLifeDays);
+    const expirationDate = (typeof reminder.shelfLifeDays === 'undefined' || typeof reminder.productionDate === 'undefined') ? null : addDays(new Date(reminder.productionDate), reminder.shelfLifeDays);
     const canMarkWasted = !reminder.wasted;
     const canMarkConsumed = !reminder.consumed;
     const canMarkActive = reminder.wasted || reminder.consumed;
@@ -74,7 +74,7 @@ const ReminderDetailOverlay = ({
     return null;
   }
 
-  const { remainingDays, percent, isExpired, expirationDate, canMarkWasted, canMarkConsumed, canMarkActive } = derived;
+  const { remainingDays, percent, isExpired, expirationDate, canMarkActive } = derived;
 
   const handleSubmit = async (values: ReminderFormValues) => {
     await onUpdate(reminder.id, values);
@@ -150,7 +150,7 @@ const ReminderDetailOverlay = ({
                 <p className="reminder-detail__label">Item</p>
                 <h2>{reminder.name}</h2>
               </div>
-              {!reminder.wasted && !reminder.consumed ? (
+              {!reminder.wasted && !reminder.consumed && typeof reminder.shelfLifeDays !== 'undefined' ? (
                 <p className={clsx('reminder-detail__status', { expired: isExpired })}>
                   {formatRemainingLife(remainingDays)}
                 </p>
@@ -176,7 +176,7 @@ const ReminderDetailOverlay = ({
                 <dt>Category</dt>
                 <dd>{reminder.category}</dd>
               </div>) : null}
-              <div>
+              {reminder.productionDate ? (<div>
                 <dt>Production date</dt>
                 <dd>
                   {new Date(reminder.productionDate).toLocaleDateString(undefined, {
@@ -185,7 +185,7 @@ const ReminderDetailOverlay = ({
                     day: 'numeric'
                   })}
                 </dd>
-              </div>
+              </div>) : null}
               {reminder.purchaseDate ? (
                 <div>
                   <dt>Purchase date</dt>
@@ -198,18 +198,18 @@ const ReminderDetailOverlay = ({
                   </dd>
                 </div>
               ) : null}
-              <div>
+              {reminder.shelfLifeDays ? (<div>
                 <dt>Shelf life</dt>
-                <dd>{reminder.shelfLifeDays} days</dd>
-              </div>
-              {!reminder.wasted && !reminder.consumed ? (<div>
+                <dd>{`${reminder.shelfLifeDays} days`}</dd>
+              </div>) : null}
+              {!reminder.wasted && !reminder.consumed && expirationDate ? (<div>
                 <dt>Estimated expiration</dt>
                 <dd>
-                  {expirationDate ? expirationDate.toLocaleDateString(undefined, {
+                  {expirationDate.toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
-                  }) : 'N/A'}
+                  })}
                 </dd>
               </div>) : null}
             </dl>
