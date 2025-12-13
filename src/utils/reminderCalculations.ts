@@ -56,7 +56,7 @@ export const sortByRemainingLife = (a: ReminderItem, b: ReminderItem) =>
   getRemainingDays(a) - getRemainingDays(b);
 
 export const sortByPrice = (a: ReminderItem, b: ReminderItem) =>
-  (b.price ?? 0) - (a.price ?? 0);
+  (a.price ?? 0) - (b.price ?? 0);
 
 export const sortByName = (a: ReminderItem, b: ReminderItem) =>
   a.name.toLowerCase().localeCompare(b.name.toLowerCase());
@@ -65,21 +65,21 @@ export const sortByShelfLife = (a: ReminderItem, b: ReminderItem) =>
   (a.shelfLifeDays ?? Number.POSITIVE_INFINITY) - (b.shelfLifeDays ?? Number.POSITIVE_INFINITY);
 
 export const sortByProductionDate = (a: ReminderItem, b: ReminderItem) =>
-  (b.productionDate ? new Date(b.productionDate).getTime() : 0) -
-  (a.productionDate ? new Date(a.productionDate).getTime() : 0);
+  (a.productionDate ? new Date(a.productionDate).getTime() : 0) -
+  (b.productionDate ? new Date(b.productionDate).getTime() : 0);
 
 export const sortByPurchaseDate = (a: ReminderItem, b: ReminderItem) =>
   // Handle undefined purchaseDate: treat undefined as older than any date (so it sorts last)
-  (b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0) -
-  (a.purchaseDate ? new Date(a.purchaseDate).getTime() : 0);
+  (a.purchaseDate ? new Date(a.purchaseDate).getTime() : 0) -
+  (b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0);
 
 export const sortByWastedAt = (a: ReminderItem, b: ReminderItem) =>
-  (b.wastedAt ? new Date(b.wastedAt).getTime() : 0) -
-  (a.wastedAt ? new Date(a.wastedAt).getTime() : 0);
+  (a.wastedAt ? new Date(a.wastedAt).getTime() : 0) -
+  (b.wastedAt ? new Date(b.wastedAt).getTime() : 0);
 
 export const sortByConsumedAt = (a: ReminderItem, b: ReminderItem) =>
-  (b.consumedAt ? new Date(b.consumedAt).getTime() : 0) -
-  (a.consumedAt ? new Date(a.consumedAt).getTime() : 0);
+  (a.consumedAt ? new Date(a.consumedAt).getTime() : 0) -
+  (b.consumedAt ? new Date(b.consumedAt).getTime() : 0);
 
 export const addDays = (date: Date, days: number) => {
   const clone = new Date(date);

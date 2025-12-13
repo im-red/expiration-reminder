@@ -50,16 +50,33 @@ const App = () => {
   type ActiveSort = 'remaining' | 'price' | 'name' | 'shelfLife' | 'productionDate' | 'purchaseDate';
   type WastedSort = 'wastedAt' | 'price' | 'name';
   type ConsumedSort = 'consumedAt' | 'price' | 'name';
-  type SortState = { active: ActiveSort; wasted: WastedSort; consumed: ConsumedSort };
+  type SortState = {
+    active: { key: ActiveSort; dir: 'asc' | 'desc' };
+    wasted: { key: WastedSort; dir: 'asc' | 'desc' };
+    consumed: { key: ConsumedSort; dir: 'asc' | 'desc' };
+  };
 
   const [sortState, setSortState] = useLocalStorageState<SortState>(
     SORT_KEY,
     {
-      active: 'remaining',
-      wasted: 'wastedAt',
-      consumed: 'consumedAt'
+      active: { key: 'remaining', dir: 'asc' },
+      wasted: { key: 'wastedAt', dir: 'desc' },
+      consumed: { key: 'consumedAt', dir: 'desc' }
     } as SortState
   );
+
+  // Migrate older sort state shape (where active/wasted/consumed were string values) to new object shape with dir
+  useEffect(() => {
+    // @ts-ignore - runtime shape check
+    const isOldShape = typeof (sortState as any)?.active === 'string';
+    if (isOldShape) {
+      setSortState((prev: any) => ({
+        active: { key: prev.active ?? 'remaining', dir: 'asc' },
+        wasted: { key: prev.wasted ?? 'wastedAt', dir: 'desc' },
+        consumed: { key: prev.consumed ?? 'consumedAt', dir: 'desc' }
+      }));
+    }
+  }, []);
   const overlayOpenRef = useRef(isOverlayOpen);
   const detailOpenRef = useRef(Boolean(activeReminderId));
   const menuRef = useRef<HTMLDivElement>(null);
@@ -183,37 +200,67 @@ const App = () => {
     return unique;
   }, [viewMode, activeReminders, wastedReminders, consumedReminders]);
 
-  const sortRemindersByKey = (items: ReminderItem[], key: string) => {
+  const sortRemindersByKey = (items: ReminderItem[], key: string, dir: 'asc' | 'desc') => {
     const copy = [...items];
+    let result: ReminderItem[] = copy;
     switch (key) {
       case 'remaining':
-        return copy.sort(sortByRemainingLife);
+        result = copy.sort(sortByRemainingLife);
+        break;
       case 'price':
-        return copy.sort(sortByPrice);
+        result = copy.sort(sortByPrice);
+        break;
       case 'name':
-        return copy.sort(sortByName);
+        result = copy.sort(sortByName);
+        break;
       case 'shelfLife':
-        return copy.sort(sortByShelfLife);
+        result = copy.sort(sortByShelfLife);
+        break;
       case 'productionDate':
-        return copy.sort(sortByProductionDate);
+        result = copy.sort(sortByProductionDate);
+        break;
       case 'purchaseDate':
-        return copy.sort(sortByPurchaseDate);
+        result = copy.sort(sortByPurchaseDate);
+        break;
       case 'wastedAt':
-        return copy.sort(sortByWastedAt);
+        result = copy.sort(sortByWastedAt);
+        break;
       case 'consumedAt':
-        return copy.sort(sortByConsumedAt);
+        result = copy.sort(sortByConsumedAt);
+        break;
       default:
-        return copy;
+        result = copy;
     }
+    return dir === 'asc' ? result : result.reverse();
+  };
+
+  const toggleSortDirectionForView = (view: ViewMode) => {
+    setSortState(prev => {
+      if (view === 'active') return { ...prev, active: { ...prev.active, dir: prev.active.dir === 'asc' ? 'desc' : 'asc' } };
+      if (view === 'wasted') return { ...prev, wasted: { ...prev.wasted, dir: prev.wasted.dir === 'asc' ? 'desc' : 'asc' } };
+      return { ...prev, consumed: { ...prev.consumed, dir: prev.consumed.dir === 'asc' ? 'desc' : 'asc' } };
+    });
   };
 
   let displayedReminders: ReminderItem[] = [];
   if (viewMode === 'active') {
-    displayedReminders = sortRemindersByKey(filteredActiveReminders, sortState.active);
+    displayedReminders = sortRemindersByKey(
+      filteredActiveReminders,
+      sortState.active.key,
+      sortState.active.dir
+    );
   } else if (viewMode === 'wasted') {
-    displayedReminders = sortRemindersByKey(filteredWastedReminders, sortState.wasted);
+    displayedReminders = sortRemindersByKey(
+      filteredWastedReminders,
+      sortState.wasted.key,
+      sortState.wasted.dir
+    );
   } else if (viewMode === 'consumed') {
-    displayedReminders = sortRemindersByKey(filteredConsumedReminders, sortState.consumed);
+    displayedReminders = sortRemindersByKey(
+      filteredConsumedReminders,
+      sortState.consumed.key,
+      sortState.consumed.dir
+    );
   }
 
   // Price sum
@@ -569,12 +616,18 @@ const App = () => {
               </label>
               <select
                 id="sortSelect"
-                value={viewMode === 'active' ? sortState.active : viewMode === 'wasted' ? sortState.wasted : sortState.consumed}
+                value={
+                  viewMode === 'active'
+                    ? sortState.active.key
+                    : viewMode === 'wasted'
+                      ? sortState.wasted.key
+                      : sortState.consumed.key
+                }
                 onChange={e => {
                   const v = e.target.value;
-                  if (viewMode === 'active') setSortState(prev => ({ ...prev, active: v as any }));
-                  if (viewMode === 'wasted') setSortState(prev => ({ ...prev, wasted: v as any }));
-                  if (viewMode === 'consumed') setSortState(prev => ({ ...prev, consumed: v as any }));
+                  if (viewMode === 'active') setSortState(prev => ({ ...prev, active: { key: v as any, dir: sortState.active.dir } }));
+                  if (viewMode === 'wasted') setSortState(prev => ({ ...prev, wasted: { key: v as any, dir: sortState.wasted.dir } }));
+                  if (viewMode === 'consumed') setSortState(prev => ({ ...prev, consumed: { key: v as any, dir: sortState.consumed.dir } }));
                 }}
                 style={{
                   borderRadius: '8px',
@@ -616,6 +669,28 @@ const App = () => {
                   </>
                 ) : null}
               </select>
+              <button
+                type="button"
+                title="Toggle sort direction"
+                onClick={() => toggleSortDirectionForView(viewMode)}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  color: 'gray',
+                  padding: '4px 6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {(viewMode === 'active' ? sortState.active.dir : viewMode === 'wasted' ? sortState.wasted.dir : sortState.consumed.dir) === 'asc' ? (
+                  <span aria-hidden>▲</span>
+                ) : (
+                  <span aria-hidden>▼</span>
+                )}
+              </button>
             </div>
           </div>
           <ReminderList
