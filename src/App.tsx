@@ -647,6 +647,7 @@ const App = () => {
         isOpen={isOverlayOpen}
         onClose={closeOverlay}
         onSubmit={handleAddReminder}
+        selectedCategory={selectedCategory}
       />
 
       <ReminderDetailOverlay

@@ -7,6 +7,7 @@ interface ReminderFormProps {
   submitLabel?: string;
   title?: string;
   subtitle?: string;
+  selectedCategory?: string;
 }
 
 const ReminderForm = ({
@@ -14,7 +15,8 @@ const ReminderForm = ({
   onSubmit,
   submitLabel = 'Save reminder',
   title,
-  subtitle
+  subtitle,
+  selectedCategory,
 }: ReminderFormProps) => {
   const getTodayLocal = () => {
     const d = new Date();
@@ -28,9 +30,9 @@ const ReminderForm = ({
   };
 
   const [name, setName] = useState(defaultValues?.name ?? '');
-  const [category, setCategory] = useState(defaultValues?.category ?? '');
+  const [category, setCategory] = useState(defaultValues?.category ?? (selectedCategory ?? ''));
   const [productionDate, setProductionDate] = useState(
-    defaultValues?.productionDate ?? ''
+    defaultValues?.productionDate ?? getTodayLocal()
   );
   const [purchaseDate, setPurchaseDate] = useState<string | undefined>(
     defaultValues?.purchaseDate ?? (defaultValues ? undefined : getTodayLocal())

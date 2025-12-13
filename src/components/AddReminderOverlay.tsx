@@ -6,9 +6,11 @@ interface AddReminderOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: ReminderFormValues) => Promise<void> | void;
+  selectedCategory?: string;
 }
 
-const AddReminderOverlay = ({ isOpen, onClose, onSubmit }: AddReminderOverlayProps) => {
+const AddReminderOverlay = ({ isOpen, onClose, onSubmit, selectedCategory }: AddReminderOverlayProps) => {
+  console.log('selectedCategory', selectedCategory);
   useEffect(() => {
     console.log('isOpen changed:', isOpen);
     if (isOpen) {
@@ -44,6 +46,7 @@ const AddReminderOverlay = ({ isOpen, onClose, onSubmit }: AddReminderOverlayPro
           submitLabel="Add reminder"
           title="Add reminder"
           subtitle="Capture the basics so we can track freshness for you."
+          selectedCategory={selectedCategory}
         />
       </div>
     </div>
