@@ -172,10 +172,10 @@ const ReminderDetailOverlay = ({
                 <dt>Price</dt>
                 <dd>{reminder.price ? `￥${reminder.price.toFixed(2)}` : ''}</dd>
               </div>
-              <div>
+              {!!reminder.category ? (<div>
                 <dt>Category</dt>
-                <dd>{reminder.category || 'Uncategorized'}</dd>
-              </div>
+                <dd>{reminder.category}</dd>
+              </div>) : null}
               <div>
                 <dt>Production date</dt>
                 <dd>
@@ -202,7 +202,7 @@ const ReminderDetailOverlay = ({
                 <dt>Shelf life</dt>
                 <dd>{reminder.shelfLifeDays} days</dd>
               </div>
-              <div>
+              {!reminder.wasted && !reminder.consumed ? (<div>
                 <dt>Estimated expiration</dt>
                 <dd>
                   {expirationDate ? expirationDate.toLocaleDateString(undefined, {
@@ -211,7 +211,7 @@ const ReminderDetailOverlay = ({
                     day: 'numeric'
                   }) : 'N/A'}
                 </dd>
-              </div>
+              </div>) : null}
             </dl>
 
             <div className="reminder-detail__actions">
