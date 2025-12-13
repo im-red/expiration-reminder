@@ -19,7 +19,14 @@ import useLocalStorageState from './hooks/useLocalStorageState';
 import {
   addDays,
   getRemainingDays,
-  sortByRemainingLife
+  sortByRemainingLife,
+  sortByPrice,
+  sortByName,
+  sortByShelfLife,
+  sortByProductionDate,
+  sortByPurchaseDate,
+  sortByWastedAt,
+  sortByConsumedAt
 } from './utils/reminderCalculations';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
@@ -39,6 +46,20 @@ const App = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const SORT_KEY = 'expiration-reminder:sort';
+  type ActiveSort = 'remaining' | 'price' | 'name' | 'shelfLife' | 'productionDate' | 'purchaseDate';
+  type WastedSort = 'wastedAt' | 'price' | 'name';
+  type ConsumedSort = 'consumedAt' | 'price' | 'name';
+  type SortState = { active: ActiveSort; wasted: WastedSort; consumed: ConsumedSort };
+
+  const [sortState, setSortState] = useLocalStorageState<SortState>(
+    SORT_KEY,
+    {
+      active: 'remaining',
+      wasted: 'wastedAt',
+      consumed: 'consumedAt'
+    } as SortState
+  );
   const overlayOpenRef = useRef(isOverlayOpen);
   const detailOpenRef = useRef(Boolean(activeReminderId));
   const menuRef = useRef<HTMLDivElement>(null);
@@ -116,24 +137,21 @@ const App = () => {
     };
   }, [isMenuOpen]);
 
-  const sortedReminders = useMemo(
-    () => [...reminders].sort(sortByRemainingLife),
-    [reminders]
-  );
+  const allReminders = reminders;
 
   const activeReminders = useMemo(
-    () => sortedReminders.filter(reminder => !reminder.wasted && !reminder.consumed),
-    [sortedReminders]
+    () => allReminders.filter(reminder => !reminder.wasted && !reminder.consumed),
+    [allReminders]
   );
 
   const wastedReminders = useMemo(
-    () => sortedReminders.filter(reminder => reminder.wasted),
-    [sortedReminders]
+    () => allReminders.filter(reminder => reminder.wasted),
+    [allReminders]
   );
 
   const consumedReminders = useMemo(
-    () => sortedReminders.filter(reminder => reminder.consumed),
-    [sortedReminders]
+    () => allReminders.filter(reminder => reminder.consumed),
+    [allReminders]
   );
 
   const filteredActiveReminders = useMemo(() => {
@@ -165,10 +183,38 @@ const App = () => {
     return unique;
   }, [viewMode, activeReminders, wastedReminders, consumedReminders]);
 
+  const sortRemindersByKey = (items: ReminderItem[], key: string) => {
+    const copy = [...items];
+    switch (key) {
+      case 'remaining':
+        return copy.sort(sortByRemainingLife);
+      case 'price':
+        return copy.sort(sortByPrice);
+      case 'name':
+        return copy.sort(sortByName);
+      case 'shelfLife':
+        return copy.sort(sortByShelfLife);
+      case 'productionDate':
+        return copy.sort(sortByProductionDate);
+      case 'purchaseDate':
+        return copy.sort(sortByPurchaseDate);
+      case 'wastedAt':
+        return copy.sort(sortByWastedAt);
+      case 'consumedAt':
+        return copy.sort(sortByConsumedAt);
+      default:
+        return copy;
+    }
+  };
+
   let displayedReminders: ReminderItem[] = [];
-  if (viewMode === 'active') displayedReminders = filteredActiveReminders;
-  else if (viewMode === 'wasted') displayedReminders = filteredWastedReminders;
-  else if (viewMode === 'consumed') displayedReminders = filteredConsumedReminders;
+  if (viewMode === 'active') {
+    displayedReminders = sortRemindersByKey(filteredActiveReminders, sortState.active);
+  } else if (viewMode === 'wasted') {
+    displayedReminders = sortRemindersByKey(filteredWastedReminders, sortState.wasted);
+  } else if (viewMode === 'consumed') {
+    displayedReminders = sortRemindersByKey(filteredConsumedReminders, sortState.consumed);
+  }
 
   // Price sum
   const totalPrice = useMemo(() => {
@@ -513,8 +559,64 @@ const App = () => {
               onChange={setSelectedCategory}
             />
           ) : null}
-          <div style={{ fontWeight: 600, fontSize: '0.8rem'}}>
-            {`Total price: ￥${totalPrice.toFixed(2)}`}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'space-between' }}>
+            <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>
+              {`Total price: ￥${totalPrice.toFixed(2)}`}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <label htmlFor="sortSelect" style={{ fontSize: '0.75rem' }}>
+                Sort
+              </label>
+              <select
+                id="sortSelect"
+                value={viewMode === 'active' ? sortState.active : viewMode === 'wasted' ? sortState.wasted : sortState.consumed}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (viewMode === 'active') setSortState(prev => ({ ...prev, active: v as any }));
+                  if (viewMode === 'wasted') setSortState(prev => ({ ...prev, wasted: v as any }));
+                  if (viewMode === 'consumed') setSortState(prev => ({ ...prev, consumed: v as any }));
+                }}
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid #ccc',
+                  padding: '4px 8px',
+                  backgroundColor: 'white',
+                  fontSize: '0.8rem',
+                  appearance: 'none',
+                  backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' strokeWidth=\'2\' strokeLinecap=\'round\' strokeLinejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 8px center',
+                  backgroundSize: '16px',
+                  paddingLeft: '8px',
+                  paddingRight: '24px'
+                }}
+              >
+                {viewMode === 'active' ? (
+                  <>
+                    <option value="remaining">Remaining life</option>
+                    <option value="price">Price</option>
+                    <option value="name">Name</option>
+                    <option value="shelfLife">Shelf life</option>
+                    <option value="productionDate">Production date</option>
+                    <option value="purchaseDate">Purchase date</option>
+                  </>
+                ) : null}
+                {viewMode === 'wasted' ? (
+                  <>
+                    <option value="wastedAt">Wasted date</option>
+                    <option value="price">Price</option>
+                    <option value="name">Name</option>
+                  </>
+                ) : null}
+                {viewMode === 'consumed' ? (
+                  <>
+                    <option value="consumedAt">Consumed date</option>
+                    <option value="price">Price</option>
+                    <option value="name">Name</option>
+                  </>
+                ) : null}
+              </select>
+            </div>
           </div>
           <ReminderList
             items={displayedReminders}
