@@ -44,6 +44,7 @@ const ReminderForm = ({
   const [error, setError] = useState<string | null>(null);
 
   const maxDate = getTodayLocal();
+  const defaultShelfLifeDays = 30;
 
   useEffect(() => {
     if (!defaultValues) {
@@ -59,8 +60,13 @@ const ReminderForm = ({
   }, [defaultValues]);
 
   const isValid = useMemo(() => {
-    if (!name.trim() || !productionDate || !shelfLifeDays) {
+    if (!name.trim() || !productionDate) {
       return false;
+    }
+
+    if (!shelfLifeDays) {
+      // use defaultShelfLifeDays if empty
+      return true;
     }
 
     const life = Number(shelfLifeDays);
@@ -82,7 +88,7 @@ const ReminderForm = ({
       category: category.trim(),
       productionDate,
       purchaseDate: purchaseDate ?? getTodayLocal(),
-      shelfLifeDays: Number(shelfLifeDays),
+      shelfLifeDays: !shelfLifeDays ? defaultShelfLifeDays : Number(shelfLifeDays),
       price: price ? Number(price) : undefined
     });
 
@@ -167,10 +173,9 @@ const ReminderForm = ({
           name="shelfLifeDays"
           type="number"
           min={1}
-          placeholder="10"
+          placeholder={defaultShelfLifeDays.toString()}
           value={shelfLifeDays}
           onChange={event => setShelfLifeDays(event.target.value)}
-          required
         />
       </div>
 
