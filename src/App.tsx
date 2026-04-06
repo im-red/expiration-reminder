@@ -469,98 +469,60 @@ const App = () => {
 
   return (
     <div className="app-shell">
-      <header className="app-header" style={{ position: 'relative' }}>
-        <div>
-          <p className="eyebrow">Expiration Reminder</p>
-          <h1>Keep an eye on freshness</h1>
-          <p className="subtitle">
-            Track production dates, shelf life, and remaining freshness at a glance.
-          </p>
-        </div>
-        <div style={{ position: 'absolute', top: 18, right: 18, zIndex: 20 }}>
+      {isMenuOpen && <div className="side-menu-backdrop" onClick={() => setIsMenuOpen(false)} />}
+      <div ref={menuRef} className={`side-menu ${isMenuOpen ? 'side-menu--open' : ''}`}>
+        <div className="side-menu-header">
+          <h2>Menu</h2>
           <button
             type="button"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '1.7rem',
-              color: 'white',
-              padding: 0,
-              margin: 0,
-              lineHeight: 1
-            }}
-            aria-label="Menu"
-            onClick={() => setIsMenuOpen(v => !v)}
+            className="side-menu-close"
+            onClick={() => setIsMenuOpen(false)}
           >
-            &#x22EE;
+            ×
           </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept="application/json"
-            style={{ display: 'none' }}
-            onChange={handleImportReminders}
-          />
-          {isMenuOpen && (
-            <div ref={menuRef} style={{
-              position: 'absolute',
-              top: 36,
-              right: 0,
-              background: 'white',
-              borderRadius: 12,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              minWidth: 160,
-              padding: '0.5rem 0',
-              display: 'flex',
-              flexDirection: 'column',
-              fontSize: '1rem',
-              fontWeight: 500
-            }}>
-              <button
-                type="button"
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                  padding: '0.75rem 1.25rem',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  color: '#222',
-                  cursor: 'pointer',
-                  borderBottom: '1px solid #eee',
-                  borderRadius: 0
-                }}
-                onClick={() => { handleExportReminders(); setIsMenuOpen(false); }}
-              >
-                Export Data
-              </button>
-              <button
-                type="button"
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                  padding: '0.75rem 1.25rem',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  color: '#222',
-                  cursor: 'pointer',
-                  borderRadius: 0,
-                  marginBottom: 0
-                }}
-                onClick={() => {
-                  console.log('Importing file', importInputRef.current);
-                  if (importInputRef.current) importInputRef.current.click();
-                  setIsMenuOpen(false);
-                }}
-              >
-                Import Data
-              </button>
-            </div>
-          )}
+        </div>
+        <div className="side-menu-content">
+          <button
+            type="button"
+            className="side-menu-item"
+            onClick={() => { handleExportReminders(); setIsMenuOpen(false); }}
+          >
+            📤 Export Data
+          </button>
+          <button
+            type="button"
+            className="side-menu-item"
+            onClick={() => {
+              console.log('Importing file', importInputRef.current);
+              if (importInputRef.current) importInputRef.current.click();
+              setIsMenuOpen(false);
+            }}
+          >
+            📥 Import Data
+          </button>
+        </div>
+        <div className="side-menu-footer">
+          Expiration Reminder v1.0.0
+        </div>
+      </div>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json"
+        className="hidden-input"
+        onChange={handleImportReminders}
+      />
+      <header className="app-header">
+        <button
+          type="button"
+          className="menu-trigger-btn"
+          aria-label="Menu"
+          onClick={() => setIsMenuOpen(v => !v)}
+        >
+          ☰
+        </button>
+        <div className="header-title">
+          <h1>Expiration Reminder</h1>
         </div>
       </header>
 
@@ -606,16 +568,17 @@ const App = () => {
               onChange={setSelectedCategory}
             />
           ) : null}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'space-between' }}>
-            <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>
+          <div className="sort-controls">
+            <div className="total-price">
               {`Total price: ￥${totalPrice.toFixed(2)}`}
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <label htmlFor="sortSelect" style={{ fontSize: '0.75rem' }}>
+            <div className="sort-controls__right">
+              <label htmlFor="sortSelect" className="sort-controls__label">
                 Sort
               </label>
               <select
                 id="sortSelect"
+                className="sort-select"
                 value={
                   viewMode === 'active'
                     ? sortState.active.key
@@ -628,20 +591,6 @@ const App = () => {
                   if (viewMode === 'active') setSortState(prev => ({ ...prev, active: { key: v as any, dir: sortState.active.dir } }));
                   if (viewMode === 'wasted') setSortState(prev => ({ ...prev, wasted: { key: v as any, dir: sortState.wasted.dir } }));
                   if (viewMode === 'consumed') setSortState(prev => ({ ...prev, consumed: { key: v as any, dir: sortState.consumed.dir } }));
-                }}
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid #ccc',
-                  padding: '4px 8px',
-                  backgroundColor: 'white',
-                  fontSize: '0.8rem',
-                  appearance: 'none',
-                  backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' strokeWidth=\'2\' strokeLinecap=\'round\' strokeLinejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 8px center',
-                  backgroundSize: '16px',
-                  paddingLeft: '8px',
-                  paddingRight: '24px'
                 }}
               >
                 {viewMode === 'active' ? (
@@ -671,19 +620,9 @@ const App = () => {
               </select>
               <button
                 type="button"
+                className="sort-direction-btn"
                 title="Toggle sort direction"
                 onClick={() => toggleSortDirectionForView(viewMode)}
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  color: 'gray',
-                  padding: '4px 6px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
               >
                 {(viewMode === 'active' ? sortState.active.dir : viewMode === 'wasted' ? sortState.wasted.dir : sortState.consumed.dir) === 'asc' ? (
                   <span aria-hidden>▲</span>
