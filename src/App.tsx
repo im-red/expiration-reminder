@@ -46,6 +46,7 @@ const App = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const SORT_KEY = 'expiration-reminder:sort';
   type ActiveSort = 'remaining' | 'price' | 'name' | 'shelfLife' | 'productionDate' | 'purchaseDate';
   type WastedSort = 'wastedAt' | 'price' | 'name';
@@ -234,12 +235,75 @@ const App = () => {
     return dir === 'asc' ? result : result.reverse();
   };
 
-  const toggleSortDirectionForView = (view: ViewMode) => {
+  const handleSortSelect = (key: string) => {
     setSortState(prev => {
-      if (view === 'active') return { ...prev, active: { ...prev.active, dir: prev.active.dir === 'asc' ? 'desc' : 'asc' } };
-      if (view === 'wasted') return { ...prev, wasted: { ...prev.wasted, dir: prev.wasted.dir === 'asc' ? 'desc' : 'asc' } };
-      return { ...prev, consumed: { ...prev.consumed, dir: prev.consumed.dir === 'asc' ? 'desc' : 'asc' } };
+      if (viewMode === 'active') {
+        const isSameKey = prev.active.key === key;
+        return {
+          ...prev,
+          active: {
+            key: key as ActiveSort,
+            dir: isSameKey ? (prev.active.dir === 'asc' ? 'desc' : 'asc') : prev.active.dir
+          }
+        };
+      }
+      if (viewMode === 'wasted') {
+        const isSameKey = prev.wasted.key === key;
+        return {
+          ...prev,
+          wasted: {
+            key: key as WastedSort,
+            dir: isSameKey ? (prev.wasted.dir === 'asc' ? 'desc' : 'asc') : prev.wasted.dir
+          }
+        };
+      }
+      const isSameKey = prev.consumed.key === key;
+      return {
+        ...prev,
+        consumed: {
+          key: key as ConsumedSort,
+          dir: isSameKey ? (prev.consumed.dir === 'asc' ? 'desc' : 'asc') : prev.consumed.dir
+        }
+      };
     });
+    setIsSortSheetOpen(false);
+  };
+
+  const getSortOptions = (): { key: string; label: string }[] => {
+    if (viewMode === 'active') {
+      return [
+        { key: 'remaining', label: 'Remaining life' },
+        { key: 'price', label: 'Price' },
+        { key: 'name', label: 'Name' },
+        { key: 'shelfLife', label: 'Shelf life' },
+        { key: 'productionDate', label: 'Production date' },
+        { key: 'purchaseDate', label: 'Purchase date' },
+      ];
+    }
+    if (viewMode === 'wasted') {
+      return [
+        { key: 'wastedAt', label: 'Wasted date' },
+        { key: 'price', label: 'Price' },
+        { key: 'name', label: 'Name' },
+      ];
+    }
+    return [
+      { key: 'consumedAt', label: 'Consumed date' },
+      { key: 'price', label: 'Price' },
+      { key: 'name', label: 'Name' },
+    ];
+  };
+
+  const getCurrentSortKey = () => {
+    if (viewMode === 'active') return sortState.active.key;
+    if (viewMode === 'wasted') return sortState.wasted.key;
+    return sortState.consumed.key;
+  };
+
+  const getCurrentSortLabel = () => {
+    const options = getSortOptions();
+    const current = options.find(opt => opt.key === getCurrentSortKey());
+    return current?.label ?? 'Sort';
   };
 
   let displayedReminders: ReminderItem[] = [];
@@ -573,62 +637,15 @@ const App = () => {
               {`Total price: ￥${totalPrice.toFixed(2)}`}
             </div>
             <div className="sort-controls__right">
-              <label htmlFor="sortSelect" className="sort-controls__label">
-                Sort
-              </label>
-              <select
-                id="sortSelect"
-                className="sort-select"
-                value={
-                  viewMode === 'active'
-                    ? sortState.active.key
-                    : viewMode === 'wasted'
-                      ? sortState.wasted.key
-                      : sortState.consumed.key
-                }
-                onChange={e => {
-                  const v = e.target.value;
-                  if (viewMode === 'active') setSortState(prev => ({ ...prev, active: { key: v as any, dir: sortState.active.dir } }));
-                  if (viewMode === 'wasted') setSortState(prev => ({ ...prev, wasted: { key: v as any, dir: sortState.wasted.dir } }));
-                  if (viewMode === 'consumed') setSortState(prev => ({ ...prev, consumed: { key: v as any, dir: sortState.consumed.dir } }));
-                }}
-              >
-                {viewMode === 'active' ? (
-                  <>
-                    <option value="remaining">Remaining life</option>
-                    <option value="price">Price</option>
-                    <option value="name">Name</option>
-                    <option value="shelfLife">Shelf life</option>
-                    <option value="productionDate">Production date</option>
-                    <option value="purchaseDate">Purchase date</option>
-                  </>
-                ) : null}
-                {viewMode === 'wasted' ? (
-                  <>
-                    <option value="wastedAt">Wasted date</option>
-                    <option value="price">Price</option>
-                    <option value="name">Name</option>
-                  </>
-                ) : null}
-                {viewMode === 'consumed' ? (
-                  <>
-                    <option value="consumedAt">Consumed date</option>
-                    <option value="price">Price</option>
-                    <option value="name">Name</option>
-                  </>
-                ) : null}
-              </select>
               <button
                 type="button"
-                className="sort-direction-btn"
-                title="Toggle sort direction"
-                onClick={() => toggleSortDirectionForView(viewMode)}
+                className="sort-btn"
+                onClick={() => setIsSortSheetOpen(true)}
               >
-                {(viewMode === 'active' ? sortState.active.dir : viewMode === 'wasted' ? sortState.wasted.dir : sortState.consumed.dir) === 'asc' ? (
-                  <span aria-hidden>▲</span>
-                ) : (
-                  <span aria-hidden>▼</span>
-                )}
+                <span>{getCurrentSortLabel()}</span>
+                <span className="sort-btn__arrow">
+                  {(viewMode === 'active' ? sortState.active.dir : viewMode === 'wasted' ? sortState.wasted.dir : sortState.consumed.dir) === 'asc' ? '▲' : '▼'}
+                </span>
               </button>
             </div>
           </div>
@@ -671,6 +688,46 @@ const App = () => {
         onUpdate={handleUpdateReminder}
         onDelete={handleDeleteReminder}
       />
+
+      {isSortSheetOpen && (
+        <div className="action-sheet-overlay">
+          <div className="action-sheet-backdrop" onClick={() => setIsSortSheetOpen(false)} />
+          <div className="action-sheet">
+            <div className="action-sheet__handle" />
+            <div className="action-sheet__header">
+              <h3>Sort by</h3>
+            </div>
+            <div className="action-sheet__content">
+              {getSortOptions().map(option => (
+                <button
+                  key={option.key}
+                  type="button"
+                  className={clsx('action-sheet__item', {
+                    'action-sheet__item--active': option.key === getCurrentSortKey()
+                  })}
+                  onClick={() => handleSortSelect(option.key)}
+                >
+                  <span>{option.label}</span>
+                  {option.key === getCurrentSortKey() && (
+                    <span className="action-sheet__check">
+                      {(viewMode === 'active' ? sortState.active.dir : viewMode === 'wasted' ? sortState.wasted.dir : sortState.consumed.dir) === 'asc' ? '▲' : '▼'}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="action-sheet__footer">
+              <button
+                type="button"
+                className="action-sheet__cancel"
+                onClick={() => setIsSortSheetOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
