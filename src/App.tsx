@@ -13,9 +13,12 @@ import {
 } from './types/reminder';
 import clsx from 'clsx';
 import ReminderList from './components/ReminderList';
+import SettingsPage from './components/SettingsPage';
+import AboutPage from './components/AboutPage';
 import AddReminderOverlay from './components/AddReminderOverlay';
 import ReminderDetailOverlay from './components/ReminderDetailOverlay';
 import CategoryFilter from './components/CategoryFilter';
+import useAppVersion from './hooks/useAppVersion';
 import useLocalStorageState from './hooks/useLocalStorageState';
 import {
   addDays,
@@ -48,6 +51,7 @@ const App = () => {
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'main' | 'settings' | 'about'>('main');
   const SORT_KEY = 'expiration-reminder:sort';
   type ActiveSort = 'remaining' | 'price' | 'name' | 'shelfLife' | 'productionDate' | 'purchaseDate';
   type WastedSort = 'wastedAt' | 'price' | 'name';
@@ -420,9 +424,17 @@ const App = () => {
 
   const handleExportReminders = async () => {
     const dataStr = JSON.stringify(reminders, null, 2);
+
+    const generateFileName = (): string => {
+      const now = new Date();
+      const dateString = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      return `expiration_reminders_${dateString}.json`;
+    };
+
+    const fileName = generateFileName();
+
     if (Capacitor.isNativePlatform()) {
       try {
-        const fileName = `expiration-reminders-${Date.now()}.json`;
         await Filesystem.writeFile({
           path: fileName,
           data: dataStr,
@@ -439,7 +451,7 @@ const App = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'expiration-reminders.json';
+      a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -496,12 +508,27 @@ const App = () => {
     detailOpenRef.current = Boolean(activeReminderId);
   }, [activeReminderId]);
 
+  const currentViewRef = useRef(currentView);
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
   useEffect(() => {
     let listener: PluginListenerHandle | undefined;
     let cancelled = false;
 
     const setup = async () => {
       const handle = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        if (currentViewRef.current === 'about') {
+          setCurrentView('settings');
+          return;
+        }
+
+        if (currentViewRef.current === 'settings') {
+          setCurrentView('main');
+          return;
+        }
+
         if (overlayOpenRef.current) {
           setIsOverlayOpen(false);
           return;
@@ -542,6 +569,8 @@ const App = () => {
     }
   }, [viewMode]);
 
+  const { fullString: versionString } = useAppVersion();
+
   return (
     <div className="app-shell">
       {isMenuOpen && <div className="side-menu-backdrop" onClick={() => setIsMenuOpen(false)} />}
@@ -560,7 +589,10 @@ const App = () => {
           <button
             type="button"
             className="side-menu-item"
-            onClick={() => { handleExportReminders(); setIsMenuOpen(false); }}
+            onClick={() => {
+              setIsMenuOpen(false);
+              handleExportReminders();
+            }}
           >
             📤 Export Data
           </button>
@@ -568,16 +600,26 @@ const App = () => {
             type="button"
             className="side-menu-item"
             onClick={() => {
-              console.log('Importing file', importInputRef.current);
-              if (importInputRef.current) importInputRef.current.click();
               setIsMenuOpen(false);
+              if (importInputRef.current) importInputRef.current.click();
             }}
           >
             📥 Import Data
           </button>
+          <div className="side-menu-divider" />
+          <button
+            type="button"
+            className="side-menu-item"
+            onClick={() => {
+              setIsMenuOpen(false);
+              setCurrentView('settings');
+            }}
+          >
+            ⚙️ Settings
+          </button>
         </div>
         <div className="side-menu-footer">
-          Expiration Reminder v1.0.0
+          {versionString}
         </div>
       </div>
       <input
@@ -593,6 +635,7 @@ const App = () => {
           className="menu-trigger-btn"
           aria-label="Menu"
           onClick={() => setIsMenuOpen(v => !v)}
+          style={{ flexShrink: 0, width: '44px', height: '44px' }}
         >
           ☰
         </button>
@@ -738,6 +781,17 @@ const App = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {currentView === 'settings' && (
+        <SettingsPage
+          onBack={() => setCurrentView('main')}
+          onViewAbout={() => setCurrentView('about')}
+        />
+      )}
+
+      {currentView === 'about' && (
+        <AboutPage onBack={() => setCurrentView('settings')} />
       )}
     </div>
   );

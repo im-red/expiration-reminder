@@ -20,9 +20,11 @@ yarn-error.log*
 # IDE
 .vscode/
 .idea/
+.trae/
 *.swp
 *.swo
 *~
+*.code-workspace
 
 # Capacitor
 .capacitor/
@@ -32,4 +34,11 @@ ios/
 .env
 .env.local
 .env.*.local
+.skills
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
