@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import useAppVersion from '../hooks/useAppVersion';
-
-const GITHUB_RELEASES_URL = 'https://github.com/im-red/expiration-reminder/releases';
+import { GITHUB_RELEASES_URL, GITHUB_API_LATEST_RELEASE_URL } from '../constants/urls';
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -34,7 +33,7 @@ function SettingsPage({ onBack, onViewAbout }: SettingsPageProps) {
   const handleCheckUpdate = async () => {
     setChecking(true);
     try {
-      const response = await fetch('https://api.github.com/repos/im-red/expiration-reminder/releases/latest');
+      const response = await fetch(GITHUB_API_LATEST_RELEASE_URL);
       const data = await response.json();
       const latestVersion = data.tag_name?.replace(/^v/, '') || '';
 

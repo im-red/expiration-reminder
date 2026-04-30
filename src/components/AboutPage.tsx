@@ -1,7 +1,6 @@
 import iconPng from '../../resources/icon.png';
 import useAppVersion from '../hooks/useAppVersion';
-
-const GITHUB_REPO_URL = 'https://github.com/im-red/expiration_reminder';
+import { GITHUB_REPO_URL } from '../constants/urls';
 
 interface AboutPageProps {
   onBack: () => void;
