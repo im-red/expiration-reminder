@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 3000, // Show for 3 seconds
-      launchAutoHide: true,     // Hide automatically
+      launchAutoHide: false,     // Hide automatically
       backgroundColor: "#FFFFFF", // Your background color (Hex)
       showSpinner: false,        // Hide the loading spinner
       androidScaleType: "CENTER_CROP",

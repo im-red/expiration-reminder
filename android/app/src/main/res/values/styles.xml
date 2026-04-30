@@ -16,12 +16,7 @@
     </style>
 
 
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <!-- Sets the background color of the splash screen -->
-        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
-        <!-- Sets the icon that appears in the center -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_center</item>
-        <!-- Keeps the splash screen on screen longer if needed -->
-        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
 </resources>

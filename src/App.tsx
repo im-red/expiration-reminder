@@ -1,3 +1,4 @@
+import { SplashScreen } from '@capacitor/splash-screen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -68,6 +69,16 @@ const App = () => {
 
   // Migrate older sort state shape (where active/wasted/consumed were string values) to new object shape with dir
   useEffect(() => {
+    // Hide splash screen once the app component is mounted
+    const hideSplash = async () => {
+      try {
+        await SplashScreen.hide();
+      } catch (err) {
+        console.warn('Error hiding splash screen', err);
+      }
+    };
+    hideSplash();
+
     // @ts-ignore - runtime shape check
     const isOldShape = typeof (sortState as any)?.active === 'string';
     if (isOldShape) {
