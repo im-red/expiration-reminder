@@ -23,12 +23,11 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-overflow-scrolling: touch;
 }
 
 #app,
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: var(--surface);
@@ -78,6 +77,8 @@ input[type="submit"]:active,
 main {
   flex: 1;
   padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .container {
