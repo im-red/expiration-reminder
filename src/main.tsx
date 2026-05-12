@@ -4,8 +4,21 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Keyboard } from '@capacitor/keyboard';
 import { StatusBar, Style } from '@capacitor/status-bar';
+
+// Ionic CSS — MUST come before any custom styles
+import '@ionic/react/css/core.css';
+import '@ionic/react/css/normalize.css';
+import '@ionic/react/css/structure.css';
+import '@ionic/react/css/typography.css';
+import '@ionic/react/css/padding.css';
+import '@ionic/react/css/float-elements.css';
+import '@ionic/react/css/text-alignment.css';
+import '@ionic/react/css/text-transformation.css';
+import '@ionic/react/css/flex-utils.css';
+import '@ionic/react/css/display.css';
+import '@ionic/react/css/palettes/dark.system.css';
+
 import App from './App';
-import './styles.css';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -17,7 +30,8 @@ async function initCapacitor() {
 
   try {
     if (Capacitor.isPluginAvailable('StatusBar')) {
-      await StatusBar.setStyle({ style: Style.Dark });
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: '#3880ff' });
     }
 
     CapacitorApp.addListener('appStateChange', ({ isActive }) => {
@@ -43,10 +57,10 @@ if (Capacitor.isPluginAvailable('Keyboard')) {
 async function bootstrap() {
   await initCapacitor();
 
-  const rootElement = document.getElementById('app');
+  const rootElement = document.getElementById('root');
 
   if (!rootElement) {
-    throw new Error('Unable to find root element with id "app"');
+    throw new Error('Unable to find root element with id "root"');
   }
 
   ReactDOM.createRoot(rootElement).render(

@@ -1,57 +1,45 @@
-import { useEffect } from 'react';
+import React from 'react';
+import { IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent } from '@ionic/react';
 import ReminderForm from './ReminderForm';
-import { ReminderFormValues } from '../types/reminder';
+import { ReminderFormValues } from '../models/reminder';
+import { useApp } from '../data/AppContext';
 
 interface AddReminderOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (values: ReminderFormValues) => Promise<void> | void;
   selectedCategory?: string;
 }
 
-const AddReminderOverlay = ({ isOpen, onClose, onSubmit, selectedCategory }: AddReminderOverlayProps) => {
-  console.log('selectedCategory', selectedCategory);
-  useEffect(() => {
-    console.log('isOpen changed:', isOpen);
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  if (!isOpen) {
-    return null;
-  }
+const AddReminderOverlay: React.FC<AddReminderOverlayProps> = ({ isOpen, onClose, selectedCategory }) => {
+  const { addReminder } = useApp();
 
   const handleSubmit = async (values: ReminderFormValues) => {
-    await onSubmit(values);
+    await addReminder(values);
     onClose();
   };
 
   return (
-    <div className="overlay">
-      <div className="overlay-backdrop" onClick={onClose} />
-      <div className="overlay-panel">
-        <div className="overlay-header">
-          <button type="button" className="overlay-back" onClick={onClose}>
-            &lt; Back
-          </button>
-        </div>
+    <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Add Reminder</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={onClose}>Cancel</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="ion-padding">
+        <p style={{ color: 'var(--text-muted)' }}>
+          Capture the basics so we can track freshness for you.
+        </p>
         <ReminderForm
           onSubmit={handleSubmit}
           submitLabel="Add reminder"
-          title="Add reminder"
-          subtitle="Capture the basics so we can track freshness for you."
           selectedCategory={selectedCategory}
         />
-      </div>
-    </div>
+      </IonContent>
+    </IonModal>
   );
 };
 
 export default AddReminderOverlay;
-

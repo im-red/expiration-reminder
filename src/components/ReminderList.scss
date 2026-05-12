@@ -1,0 +1,45 @@
+.reminder-list {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  ion-card.reminder-card {
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    margin: 0;
+    overflow: hidden;
+    
+    ion-card-content {
+      padding: 12px 16px;
+    }
+
+    .reminder-progress {
+      height: 4px;
+    }
+  }
+
+  .reminder-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0;
+    color: var(--text-main);
+  }
+
+  .reminder-price {
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: var(--surface);
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+
+  .reminder-life {
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
+}

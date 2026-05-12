@@ -1,23 +1,20 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { ReminderFormValues } from '../types/reminder';
+import React, { useEffect, useMemo, useState } from 'react';
+import { IonList, IonItem, IonInput, IonButton, IonText } from '@ionic/react';
+import { ReminderFormValues } from '../models/reminder';
 
 interface ReminderFormProps {
   defaultValues?: ReminderFormValues;
   onSubmit: (values: ReminderFormValues) => Promise<void> | void;
   submitLabel?: string;
-  title?: string;
-  subtitle?: string;
   selectedCategory?: string;
 }
 
-const ReminderForm = ({
+const ReminderForm: React.FC<ReminderFormProps> = ({
   defaultValues,
   onSubmit,
   submitLabel = 'Save reminder',
-  title,
-  subtitle,
   selectedCategory,
-}: ReminderFormProps) => {
+}) => {
   const getTodayLocal = () => {
     const d = new Date();
     return (
@@ -31,25 +28,18 @@ const ReminderForm = ({
 
   const [name, setName] = useState(defaultValues?.name ?? '');
   const [category, setCategory] = useState(defaultValues?.category ?? (selectedCategory ?? ''));
-  const [productionDate, setProductionDate] = useState(
-    defaultValues?.productionDate ?? ''
-  );
+  const [productionDate, setProductionDate] = useState(defaultValues?.productionDate ?? '');
   const [purchaseDate, setPurchaseDate] = useState<string | undefined>(
     defaultValues?.purchaseDate ?? (defaultValues ? undefined : getTodayLocal())
   );
-  const [shelfLifeDays, setShelfLifeDays] = useState(
-    defaultValues?.shelfLifeDays?.toString() ?? ''
-  );
+  const [shelfLifeDays, setShelfLifeDays] = useState(defaultValues?.shelfLifeDays?.toString() ?? '');
   const [price, setPrice] = useState(defaultValues?.price?.toString() ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const maxDate = getTodayLocal();
 
   useEffect(() => {
-    if (!defaultValues) {
-      return;
-    }
-
+    if (!defaultValues) return;
     setName(defaultValues.name);
     setCategory(defaultValues.category ?? '');
     setProductionDate(defaultValues.productionDate ?? '');
@@ -59,22 +49,13 @@ const ReminderForm = ({
   }, [defaultValues]);
 
   const isValid = useMemo(() => {
-    if (!name.trim()) {
-      return false;
-    }
-
-    if (!shelfLifeDays) {
-      // empty is allowed (optional shelf life)
-      return true;
-    }
-
+    if (!name.trim()) return false;
+    if (!shelfLifeDays) return true;
     const life = Number(shelfLifeDays);
     return Number.isFinite(life) && life > 0;
-  }, [name, productionDate, shelfLifeDays]);
+  }, [name, shelfLifeDays]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleSubmit = async () => {
     if (!isValid) {
       setError('Please fill in all fields with valid information.');
       return;
@@ -85,8 +66,8 @@ const ReminderForm = ({
     await onSubmit({
       name: name.trim(),
       category: category.trim(),
-      productionDate: productionDate ?? undefined,
-      purchaseDate: purchaseDate ?? getTodayLocal(),
+      productionDate: productionDate || undefined,
+      purchaseDate: purchaseDate || getTodayLocal(),
       shelfLifeDays: shelfLifeDays ? Number(shelfLifeDays) : undefined,
       price: price ? Number(price) : undefined
     });
@@ -101,104 +82,91 @@ const ReminderForm = ({
     }
   };
 
-  const heading = title ?? (defaultValues ? 'Edit reminder' : 'Add reminder');
-  const helperText =
-    subtitle ??
-    (defaultValues
-      ? 'Update the freshness metadata below.'
-      : 'Optionally enter production date and/or shelf life to start tracking.');
-
   return (
-    <form className="card reminder-form" onSubmit={handleSubmit}>
-      <div className="card-header">
-        <h2>{heading}</h2>
-        <p>{helperText}</p>
+    <>
+      <IonList className="edge-to-edge">
+        <IonItem>
+          <IonInput
+            label="Name"
+            labelPlacement="stacked"
+            placeholder="Homemade kombucha"
+            value={name}
+            onIonInput={e => setName(e.detail.value ?? '')}
+            required
+          />
+        </IonItem>
+
+        <IonItem>
+          <IonInput
+            label="Category (optional)"
+            labelPlacement="stacked"
+            placeholder="Dairy / Meal prep / etc."
+            value={category}
+            onIonInput={e => setCategory(e.detail.value ?? '')}
+          />
+        </IonItem>
+
+        <IonItem>
+          <IonInput
+            label="Production date"
+            labelPlacement="stacked"
+            type="date"
+            value={productionDate}
+            onIonInput={e => setProductionDate(e.detail.value ?? '')}
+            max={maxDate}
+          />
+        </IonItem>
+
+        <IonItem>
+          <IonInput
+            label="Purchase date (optional)"
+            labelPlacement="stacked"
+            type="date"
+            value={purchaseDate ?? ''}
+            onIonInput={e => setPurchaseDate(e.detail.value ?? '')}
+            max={maxDate}
+          />
+        </IonItem>
+
+        <IonItem>
+          <IonInput
+            label="Shelf life (days) (optional)"
+            labelPlacement="stacked"
+            type="number"
+            min={1}
+            placeholder="30"
+            value={shelfLifeDays}
+            onIonInput={e => setShelfLifeDays(e.detail.value ?? '')}
+          />
+        </IonItem>
+
+        <IonItem>
+          <IonInput
+            label="Price (optional)"
+            labelPlacement="stacked"
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder="0.00"
+            value={price}
+            onIonInput={e => setPrice(e.detail.value ?? '')}
+          />
+        </IonItem>
+      </IonList>
+
+      {error && (
+        <IonText color="danger" className="ion-padding-horizontal">
+          <p>{error}</p>
+        </IonText>
+      )}
+
+      <div>
+        <IonButton expand="block" onClick={handleSubmit} disabled={!isValid}>
+          {submitLabel}
+        </IonButton>
       </div>
-
-      <div className="form-group">
-        <label htmlFor="name">Name</label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          placeholder="Homemade kombucha"
-          value={name}
-          onChange={event => setName(event.target.value)}
-          required
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="category">Category (optional)</label>
-        <input
-          id="category"
-          name="category"
-          type="text"
-          placeholder="Dairy / Meal prep / etc."
-          value={category}
-          onChange={event => setCategory(event.target.value)}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="productionDate">Production date</label>
-        <input
-          id="productionDate"
-          name="productionDate"
-          type="date"
-          value={productionDate}
-          onChange={event => setProductionDate(event.target.value)}
-          max={maxDate}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="purchaseDate">Purchase date (optional)</label>
-        <input
-          id="purchaseDate"
-          name="purchaseDate"
-          type="date"
-          value={purchaseDate ?? ''}
-          onChange={event => setPurchaseDate(event.target.value)}
-          max={maxDate}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="shelfLifeDays">Shelf life (days) (optional)</label>
-        <input
-          id="shelfLifeDays"
-          name="shelfLifeDays"
-          type="number"
-          min={1}
-          placeholder="30"
-          value={shelfLifeDays}
-          onChange={event => setShelfLifeDays(event.target.value)}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="price">Price (optional)</label>
-        <input
-          id="price"
-          name="price"
-          type="number"
-          min={0}
-          step="0.01"
-          placeholder="0.00"
-          value={price}
-          onChange={event => setPrice(event.target.value)}
-        />
-      </div>
-
-      {error ? <p className="form-error">{error}</p> : null}
-
-      <button className="btn-primary" type="submit" disabled={!isValid}>
-        {submitLabel}
-      </button>
-    </form>
+    </>
   );
 };
 
 export default ReminderForm;
-

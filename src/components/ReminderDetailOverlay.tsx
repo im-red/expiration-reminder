@@ -1,49 +1,52 @@
-import { useEffect, useMemo, useState } from 'react';
-import clsx from 'clsx';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  IonModal,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
+  IonContent,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonProgressBar,
+  IonText,
+  IonAlert,
+  IonActionSheet,
+  IonIcon,
+} from '@ionic/react';
 import ReminderForm from './ReminderForm';
-import { ReminderFormValues, ReminderItem } from '../types/reminder';
+import { ReminderItem } from '../models/reminder';
+import { useApp } from '../data/AppContext';
 import {
   addDays,
   computeRemainingPercent,
   formatRemainingLife,
   getRemainingDays
-} from '../utils/reminderCalculations';
+} from '../util/reminderCalculations';
+import { ellipsisVertical } from 'ionicons/icons';
 
 interface ReminderDetailOverlayProps {
   reminder: ReminderItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (id: string, updates: Partial<ReminderItem>) => Promise<void> | void;
-  onDelete: (id: string) => Promise<void> | void;
 }
 
-const ReminderDetailOverlay = ({
+const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
   reminder,
   isOpen,
   onClose,
-  onUpdate,
-  onDelete
-}: ReminderDetailOverlayProps) => {
+}) => {
+  const { updateReminder, deleteReminder } = useApp();
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false);
-      return;
     }
-
-    setIsEditing(false);
-  }, [isOpen, reminder]);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
 
   const derived = useMemo(() => {
@@ -53,8 +56,6 @@ const ReminderDetailOverlay = ({
         percent: 0,
         isExpired: false,
         expirationDate: null as Date | null,
-        canMarkWasted: false,
-        canMarkConsumed: false,
         canMarkActive: false
       };
     }
@@ -62,191 +63,198 @@ const ReminderDetailOverlay = ({
     const remainingDays = getRemainingDays(reminder);
     const percent = computeRemainingPercent(remainingDays, reminder.shelfLifeDays);
     const isExpired = remainingDays <= 0;
-    const expirationDate = (typeof reminder.shelfLifeDays === 'undefined' || typeof reminder.productionDate === 'undefined') ? null : addDays(new Date(reminder.productionDate), reminder.shelfLifeDays);
-    const canMarkWasted = !reminder.wasted;
-    const canMarkConsumed = !reminder.consumed;
+    const expirationDate = (typeof reminder.shelfLifeDays === 'undefined' || typeof reminder.productionDate === 'undefined')
+      ? null
+      : addDays(new Date(reminder.productionDate), reminder.shelfLifeDays);
     const canMarkActive = reminder.wasted || reminder.consumed;
 
-    return { remainingDays, percent, isExpired, expirationDate, canMarkWasted, canMarkConsumed, canMarkActive };
+    return { remainingDays, percent, isExpired, expirationDate, canMarkActive };
   }, [reminder]);
 
-  if (!isOpen || !reminder) {
-    return null;
-  }
+  if (!reminder) return null;
 
   const { remainingDays, percent, isExpired, expirationDate, canMarkActive } = derived;
 
-  const handleSubmit = async (values: ReminderFormValues) => {
-    await onUpdate(reminder.id, values);
+  const handleSubmit = async (values: any) => {
+    await updateReminder(reminder.id, values);
     setIsEditing(false);
-    onClose();
   };
 
-  const handleDelete = async () => {
-    const shouldDelete = window.confirm('Delete this reminder? This cannot be undone.');
-    if (!shouldDelete) {
-      return;
-    }
-
-    await onDelete(reminder.id);
+  const handleConfirmDelete = async () => {
+    await deleteReminder(reminder.id);
     onClose();
   };
 
   const handleMarkWasted = async () => {
-    await onUpdate(reminder.id, { wasted: true, wastedAt: new Date().toISOString(), consumed: false, consumedAt: null });
+    await updateReminder(reminder.id, { wasted: true, wastedAt: new Date().toISOString(), consumed: false, consumedAt: null });
     onClose();
   };
 
   const handleMarkConsumed = async () => {
-    await onUpdate(reminder.id, { consumed: true, consumedAt: new Date().toISOString(), wasted: false, wastedAt: null });
+    await updateReminder(reminder.id, { consumed: true, consumedAt: new Date().toISOString(), wasted: false, wastedAt: null });
     onClose();
   };
 
   const handleMarkActive = async () => {
-    await onUpdate(reminder.id, { wasted: false, wastedAt: null, consumed: false, consumedAt: null });
+    await updateReminder(reminder.id, { wasted: false, wastedAt: null, consumed: false, consumedAt: null });
     onClose();
   };
 
   return (
-    <div className="overlay">
-      <div className="overlay-backdrop" onClick={onClose} />
-      <div className="overlay-panel">
-        <div className="overlay-header overlay-header--between">
-          <button type="button" className="overlay-back" onClick={onClose}>
-            &lt; Back
-          </button>
-          {!isEditing && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                type="button"
-                className="overlay-action overlay-action--danger"
-                onClick={handleDelete}
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                className="overlay-action"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit
-              </button>
-            </div>
-          )}
-        </div>
+    <>
+      <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>{isEditing ? 'Edit Reminder' : reminder.name}</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={onClose}>Close</IonButton>
+              {!isEditing && (
+                <IonButton onClick={() => setShowActionSheet(true)}>
+                  <IonIcon slot="icon-only" icon={ellipsisVertical} />
+                </IonButton>
+              )}
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
 
-        {isEditing ? (
-          <ReminderForm
-            defaultValues={reminder}
-            submitLabel="Save changes"
-            title="Edit reminder"
-            subtitle="Adjust fields below and save to keep things accurate."
-            onSubmit={handleSubmit}
-          />
-        ) : (
-          <article className="card reminder-detail">
-            <header className="reminder-detail__header">
-              <div>
-                <p className="reminder-detail__label">Item</p>
-                <h2>{reminder.name}</h2>
-              </div>
-              {!reminder.wasted && !reminder.consumed && typeof reminder.shelfLifeDays !== 'undefined' ? (
-                <p className={clsx('reminder-detail__status', { expired: isExpired })}>
-                  {formatRemainingLife(remainingDays)}
-                </p>
-              ) : null}
-            </header>
-
-            <div className="progress-bar progress-bar--lg">
-              <div
-                className={clsx('progress-bar__fill', {
-                  'is-low': percent <= 25,
-                  'is-expired': isExpired
-                })}
-                style={{ width: `${percent}%` }}
+        <IonContent className="ion-padding">
+          {isEditing ? (
+            <>
+              <p style={{ color: 'var(--text-muted)' }}>
+                Adjust fields below and save to keep things accurate.
+              </p>
+              <ReminderForm
+                defaultValues={reminder}
+                submitLabel="Save changes"
+                onSubmit={handleSubmit}
               />
-            </div>
-
-            <dl className="reminder-detail__meta">
-              <div style={{ display: reminder.price ? 'grid' : 'none' }}>
-                <dt>Price</dt>
-                <dd>{reminder.price ? `￥${reminder.price.toFixed(2)}` : ''}</dd>
+              <div>
+                <IonButton expand="block" fill="clear" onClick={() => setIsEditing(false)}>
+                  Cancel Edit
+                </IonButton>
               </div>
-              {!!reminder.category ? (<div>
-                <dt>Category</dt>
-                <dd>{reminder.category}</dd>
-              </div>) : null}
-              {reminder.productionDate ? (<div>
-                <dt>Production date</dt>
-                <dd>
-                  {new Date(reminder.productionDate).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </dd>
-              </div>) : null}
-              {reminder.purchaseDate ? (
-                <div>
-                  <dt>Purchase date</dt>
-                  <dd>
-                    {new Date(reminder.purchaseDate).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </dd>
+            </>
+          ) : (
+            <>
+              {!reminder.wasted && !reminder.consumed && typeof reminder.shelfLifeDays !== 'undefined' && (
+                <div className="ion-padding-bottom">
+                  <h2 style={{ marginTop: 0 }}>
+                    <IonText color={isExpired ? 'danger' : percent <= 25 ? 'warning' : 'primary'}>
+                      {formatRemainingLife(remainingDays)}
+                    </IonText>
+                  </h2>
+                  <IonProgressBar
+                    value={percent / 100}
+                    color={isExpired ? 'danger' : percent <= 25 ? 'warning' : 'primary'}
+                    style={{ height: '14px', borderRadius: '8px' }}
+                  />
                 </div>
-              ) : null}
-              {reminder.shelfLifeDays ? (<div>
-                <dt>Shelf life</dt>
-                <dd>{`${reminder.shelfLifeDays} days`}</dd>
-              </div>) : null}
-              {!reminder.wasted && !reminder.consumed && expirationDate ? (<div>
-                <dt>Estimated expiration</dt>
-                <dd>
-                  {expirationDate.toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </dd>
-              </div>) : null}
-            </dl>
+              )}
 
-            <div className="reminder-detail__actions">
-              {canMarkActive ? (
-                <button type="button" className="pill-button" onClick={handleMarkActive}>
-                  Mark as active
-                </button>
-              ) : null}
-              {reminder.wasted && (
-                <button type="button" className="pill-button" onClick={handleMarkConsumed}>
-                  Mark as consumed
-                </button>
-              )}
-              {reminder.consumed && (
-                <button type="button" className="pill-button" onClick={handleMarkWasted}>
-                  Mark as wasted
-                </button>
-              )}
-              {!reminder.wasted && !reminder.consumed && (
-                <>
-                  <button type="button" className="pill-button" onClick={handleMarkWasted}>
-                    Mark as wasted
-                  </button>
-                  <button type="button" className="pill-button" onClick={handleMarkConsumed}>
-                    Mark as consumed
-                  </button>
-                </>
-              )}
-            </div>
-          </article>
-        )}
-      </div>
-    </div>
+              <IonList className="edge-to-edge">
+                {reminder.price ? (
+                  <IonItem>
+                    <IonLabel>
+                      <p>Price</p>
+                      <h2>￥{reminder.price.toFixed(2)}</h2>
+                    </IonLabel>
+                  </IonItem>
+                ) : null}
+
+                {reminder.category ? (
+                  <IonItem>
+                    <IonLabel>
+                      <p>Category</p>
+                      <h2>{reminder.category}</h2>
+                    </IonLabel>
+                  </IonItem>
+                ) : null}
+
+                {reminder.productionDate ? (
+                  <IonItem>
+                    <IonLabel>
+                      <p>Production date</p>
+                      <h2>{new Date(reminder.productionDate).toLocaleDateString()}</h2>
+                    </IonLabel>
+                  </IonItem>
+                ) : null}
+
+                {reminder.purchaseDate ? (
+                  <IonItem>
+                    <IonLabel>
+                      <p>Purchase date</p>
+                      <h2>{new Date(reminder.purchaseDate).toLocaleDateString()}</h2>
+                    </IonLabel>
+                  </IonItem>
+                ) : null}
+
+                {reminder.shelfLifeDays ? (
+                  <IonItem>
+                    <IonLabel>
+                      <p>Shelf life</p>
+                      <h2>{reminder.shelfLifeDays} days</h2>
+                    </IonLabel>
+                  </IonItem>
+                ) : null}
+
+                {!reminder.wasted && !reminder.consumed && expirationDate ? (
+                  <IonItem>
+                    <IonLabel>
+                      <p>Estimated expiration</p>
+                      <h2>{expirationDate.toLocaleDateString()}</h2>
+                    </IonLabel>
+                  </IonItem>
+                ) : null}
+              </IonList>
+            </>
+          )}
+        </IonContent>
+      </IonModal>
+
+      <IonActionSheet
+        isOpen={showActionSheet}
+        onDidDismiss={() => setShowActionSheet(false)}
+        buttons={[
+          {
+            text: 'Edit',
+            handler: () => setIsEditing(true),
+          },
+          ...(canMarkActive ? [{
+            text: 'Mark as Active',
+            handler: handleMarkActive,
+          }] : []),
+          ...(!reminder.consumed ? [{
+            text: 'Mark as Consumed',
+            handler: handleMarkConsumed,
+          }] : []),
+          ...(!reminder.wasted ? [{
+            text: 'Mark as Wasted',
+            handler: handleMarkWasted,
+          }] : []),
+          {
+            text: 'Delete',
+            role: 'destructive',
+            handler: () => setShowDeleteAlert(true),
+          },
+          {
+            text: 'Cancel',
+            role: 'cancel',
+          }
+        ]}
+      />
+
+      <IonAlert
+        isOpen={showDeleteAlert}
+        onDidDismiss={() => setShowDeleteAlert(false)}
+        header="Delete Reminder?"
+        message="This action cannot be undone."
+        buttons={[
+          { text: 'Cancel', role: 'cancel' },
+          { text: 'Delete', role: 'destructive', handler: handleConfirmDelete },
+        ]}
+      />
+    </>
   );
 };
 
 export default ReminderDetailOverlay;
-

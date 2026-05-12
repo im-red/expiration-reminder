@@ -1,10 +1,14 @@
+import React from 'react';
+import { IonList, IonCard, IonCardContent, IonText, IonIcon, IonProgressBar } from '@ionic/react';
+import { timeOutline, warningOutline, alertCircleOutline, checkmarkCircleOutline } from 'ionicons/icons';
 import clsx from 'clsx';
-import { ReminderItem } from '../types/reminder';
+import { ReminderItem } from '../models/reminder';
 import {
   computeRemainingPercent,
   formatRemainingLife,
   getRemainingDays
-} from '../utils/reminderCalculations';
+} from '../util/reminderCalculations';
+import './ReminderList.scss';
 
 interface ReminderListProps {
   items: ReminderItem[];
@@ -12,63 +16,67 @@ interface ReminderListProps {
   emptyMessage?: string;
 }
 
-const ReminderList = ({ items, onSelect, emptyMessage }: ReminderListProps) => {
+const ReminderList: React.FC<ReminderListProps> = ({ items, onSelect, emptyMessage }) => {
   if (!items.length) {
     return (
-      <section className="card reminder-empty">
-        <h2>Reminder list</h2>
+      <div className="ion-text-center ion-padding" style={{ color: 'var(--text-muted)' }}>
         <p>{emptyMessage ?? 'Items you add will appear here with a freshness indicator.'}</p>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="card reminder-list">
-      <ul>
-        {items.map(item => {
-          const remainingDays = getRemainingDays(item);
-          const isExpired = remainingDays <= 0;
-          const isLow = remainingDays > 0 && remainingDays <= 30;
-          const percent = computeRemainingPercent(remainingDays, item.shelfLifeDays);
+    <div className="reminder-list">
+      {items.map(item => {
+        const remainingDays = getRemainingDays(item);
+        const isExpired = remainingDays <= 0;
+        const isLow = remainingDays > 0 && remainingDays <= 30;
+        const percent = computeRemainingPercent(remainingDays, item.shelfLifeDays);
 
-          return (
-            <li key={item.id}>
-              <button type="button" className="reminder-row" onClick={() => onSelect(item)}>
-                <div className="reminder-row__top">
-                  <span style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-                    <span className="reminder-row__name">{item.name}</span>
-                    {!item.wasted && !item.consumed && typeof item.shelfLifeDays !== 'undefined' && typeof item.productionDate !== 'undefined' && (
-                      <span
-                        className={clsx('reminder-row__life', {
-                          expired: isExpired,
-                          warning: isLow
-                        })}
-                      >
-                        {formatRemainingLife(remainingDays)}
-                      </span>
-                    )}
-                  </span>
-                  <span className="reminder-row__price">{item.price ? `￥${item.price.toFixed(2)}` : ''}</span>
+        const hasProgressBar = !item.wasted && !item.consumed && typeof item.shelfLifeDays !== 'undefined' && typeof item.productionDate !== 'undefined';
+
+        const colorName = isExpired ? 'danger' : isLow ? 'warning' : 'primary';
+
+        let statusIcon = timeOutline;
+        if (item.wasted) statusIcon = alertCircleOutline;
+        else if (item.consumed) statusIcon = checkmarkCircleOutline;
+        else if (isExpired) statusIcon = alertCircleOutline;
+        else if (isLow) statusIcon = warningOutline;
+
+        return (
+          <IonCard
+            button
+            key={item.id}
+            onClick={() => onSelect(item)}
+            className="reminder-card"
+          >
+            <IonCardContent>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 className="reminder-name">{item.name}</h2>
+                {item.price ? <IonText color="medium" className="reminder-price">￥{item.price.toFixed(2)}</IonText> : null}
+              </div>
+
+              {hasProgressBar && (
+                <div className="reminder-life">
+                  <IonIcon icon={statusIcon} color={colorName} />
+                  <IonText color={colorName}>
+                    {formatRemainingLife(remainingDays)}
+                  </IonText>
                 </div>
-                {!item.wasted && !item.consumed && (
-                  <div className="progress-bar progress-bar--sm">
-                    <div
-                      className={clsx('progress-bar__fill', {
-                        'is-low': percent <= 25,
-                        'is-expired': isExpired
-                      })}
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+              )}
+            </IonCardContent>
+            {hasProgressBar && (
+              <IonProgressBar
+                value={percent / 100}
+                color={colorName}
+                className="reminder-progress"
+              />
+            )}
+          </IonCard>
+        );
+      })}
+    </div>
   );
 };
 
 export default ReminderList;
-

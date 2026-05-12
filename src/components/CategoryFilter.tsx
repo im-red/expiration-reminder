@@ -1,4 +1,6 @@
-import clsx from 'clsx';
+import React from 'react';
+import { IonChip } from '@ionic/react';
+import './CategoryFilter.scss';
 
 interface CategoryFilterProps {
   categories: string[];
@@ -6,11 +8,11 @@ interface CategoryFilterProps {
   onChange: (category: string) => void;
 }
 
-const CategoryFilter = ({
+const CategoryFilter: React.FC<CategoryFilterProps> = ({
   categories,
   selectedCategory,
   onChange
-}: CategoryFilterProps) => {
+}) => {
   if (!categories.length) {
     return null;
   }
@@ -21,26 +23,25 @@ const CategoryFilter = ({
 
   return (
     <div className="category-filter">
-      <button
-        type="button"
-        className={clsx('category-pill', { active: selectedCategory === '' })}
+      <IonChip
+        color={selectedCategory === '' ? 'primary' : 'medium'}
         onClick={handleSelect('')}
+        outline={selectedCategory !== ''}
       >
         All
-      </button>
+      </IonChip>
       {categories.map(category => (
-        <button
+        <IonChip
           key={category}
-          type="button"
-          className={clsx('category-pill', { active: selectedCategory === category })}
+          color={selectedCategory === category ? 'primary' : 'medium'}
           onClick={handleSelect(category)}
+          outline={selectedCategory !== category}
         >
           {category}
-        </button>
+        </IonChip>
       ))}
     </div>
   );
 };
 
 export default CategoryFilter;
-

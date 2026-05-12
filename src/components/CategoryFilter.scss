@@ -1,0 +1,9 @@
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+
+  ion-chip {
+    padding: 0.5rem 0.75rem;
+  }
+}
