@@ -206,6 +206,24 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
                   </IonItem>
                 ) : null}
               </IonList>
+
+              <div className="ion-margin-top">
+                {canMarkActive && (
+                  <IonButton expand="block" onClick={handleMarkActive} className="ion-margin-bottom">
+                    Mark as Active
+                  </IonButton>
+                )}
+                {!reminder.consumed && (
+                  <IonButton expand="block" onClick={handleMarkConsumed} className="ion-margin-bottom">
+                    Mark as Consumed
+                  </IonButton>
+                )}
+                {!reminder.wasted && (
+                  <IonButton expand="block" onClick={handleMarkWasted}>
+                    Mark as Wasted
+                  </IonButton>
+                )}
+              </div>
             </>
           )}
         </IonContent>
@@ -219,18 +237,6 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
             text: 'Edit',
             handler: () => setIsEditing(true),
           },
-          ...(canMarkActive ? [{
-            text: 'Mark as Active',
-            handler: handleMarkActive,
-          }] : []),
-          ...(!reminder.consumed ? [{
-            text: 'Mark as Consumed',
-            handler: handleMarkConsumed,
-          }] : []),
-          ...(!reminder.wasted ? [{
-            text: 'Mark as Wasted',
-            handler: handleMarkWasted,
-          }] : []),
           {
             text: 'Delete',
             role: 'destructive',
