@@ -3,6 +3,7 @@ import { IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonCo
 import ReminderForm from './ReminderForm';
 import { ReminderFormValues } from '../models/reminder';
 import { useApp } from '../data/AppContext';
+import './AddReminderOverlay.scss';
 
 interface AddReminderOverlayProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ const AddReminderOverlay: React.FC<AddReminderOverlayProps> = ({ isOpen, onClose
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <p style={{ color: 'var(--text-muted)' }}>
+        <p className="add-reminder-description">
           Capture the basics so we can track freshness for you.
         </p>
         <ReminderForm

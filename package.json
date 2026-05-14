@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "sync": "npx cap sync",
     "open:android": "npx cap open android",
-    "open:ios": "npx cap open ios"
+    "open:ios": "npx cap open ios",
+    "go": "vite build && npx cap sync && npx cap open android"
   },
   "keywords": [
     "capacitor",

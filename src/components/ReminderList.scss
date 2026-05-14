@@ -1,3 +1,13 @@
+.reminder-list-empty {
+  color: var(--ion-color-medium);
+}
+
+.reminder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .reminder-list {
   background: transparent;
   display: flex;
@@ -6,7 +16,7 @@
 
   ion-card.reminder-card {
     border-radius: 16px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     margin: 0;
     overflow: hidden;
     
@@ -23,13 +33,13 @@
     font-weight: 600;
     font-size: 1.1rem;
     margin: 0;
-    color: var(--text-main);
+    color: var(--ion-text-color);
   }
 
   .reminder-price {
     font-weight: 600;
     font-size: 0.9rem;
-    background: var(--surface);
+    background: var(--ion-color-step-50);
     padding: 4px 8px;
     border-radius: 8px;
   }

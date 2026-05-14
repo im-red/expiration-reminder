@@ -1,0 +1,14 @@
+.reminder-detail-description {
+  color: var(--ion-color-medium);
+}
+
+.reminder-detail-progress-container {
+  h2 {
+    margin-top: 0;
+  }
+
+  ion-progress-bar {
+    height: 14px;
+    border-radius: 8px;
+  }
+}

@@ -105,7 +105,7 @@ const SideMenu: React.FC = () => {
             ref={importInputRef}
             type="file"
             accept="application/json"
-            style={{ display: 'none' }}
+            className="ion-hide"
             onChange={handleImportReminders}
           />
 

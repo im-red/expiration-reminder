@@ -16,13 +16,13 @@
 .about-app-name {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-main);
+  color: var(--ion-text-color);
   margin-bottom: 0.25rem;
 }
 
 .about-app-version {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  color: var(--ion-color-medium);
 }
 
 ion-alert.update-alert .alert-message {

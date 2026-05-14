@@ -19,7 +19,7 @@ interface ReminderListProps {
 const ReminderList: React.FC<ReminderListProps> = ({ items, onSelect, emptyMessage }) => {
   if (!items.length) {
     return (
-      <div className="ion-text-center ion-padding" style={{ color: 'var(--text-muted)' }}>
+      <div className="ion-text-center ion-padding reminder-list-empty">
         <p>{emptyMessage ?? 'Items you add will appear here with a freshness indicator.'}</p>
       </div>
     );
@@ -51,7 +51,7 @@ const ReminderList: React.FC<ReminderListProps> = ({ items, onSelect, emptyMessa
             className="reminder-card"
           >
             <IonCardContent>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="reminder-header">
                 <h2 className="reminder-name">{item.name}</h2>
                 {item.price ? <IonText color="medium" className="reminder-price">￥{item.price.toFixed(2)}</IonText> : null}
               </div>

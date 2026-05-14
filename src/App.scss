@@ -5,8 +5,8 @@ body {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--background);
-  color: var(--text-main);
+  background-color: var(--ion-background-color);
+  color: var(--ion-text-color);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -22,9 +22,9 @@ ion-list.edge-to-edge ion-item {
 }
 
 .action-sheet-container .action-sheet-button.action-sheet-destructive {
-  color: var(--error);
+  color: var(--ion-color-danger);
 }
 
 .action-sheet-container .action-sheet-button.action-sheet-cancel {
-  color: var(--text-secondary);
+  color: var(--ion-color-step-400);
 }

@@ -26,6 +26,7 @@ import {
   getRemainingDays
 } from '../util/reminderCalculations';
 import { ellipsisVertical } from 'ionicons/icons';
+import './ReminderDetailOverlay.scss';
 
 interface ReminderDetailOverlayProps {
   reminder: ReminderItem | null;
@@ -120,7 +121,7 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
         <IonContent className="ion-padding">
           {isEditing ? (
             <>
-              <p style={{ color: 'var(--text-muted)' }}>
+              <p className="reminder-detail-description">
                 Adjust fields below and save to keep things accurate.
               </p>
               <ReminderForm
@@ -137,8 +138,8 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
           ) : (
             <>
               {!reminder.wasted && !reminder.consumed && typeof reminder.shelfLifeDays !== 'undefined' && (
-                <div className="ion-padding-bottom">
-                  <h2 style={{ marginTop: 0 }}>
+                <div className="ion-padding-bottom reminder-detail-progress-container">
+                  <h2>
                     <IonText color={isExpired ? 'danger' : percent <= 25 ? 'warning' : 'primary'}>
                       {formatRemainingLife(remainingDays)}
                     </IonText>
@@ -146,7 +147,6 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
                   <IonProgressBar
                     value={percent / 100}
                     color={isExpired ? 'danger' : percent <= 25 ? 'warning' : 'primary'}
-                    style={{ height: '14px', borderRadius: '8px' }}
                   />
                 </div>
               )}

@@ -8,11 +8,11 @@
 ion-card.view-switch__card {
   margin: 0;
   border-radius: 16px;
-  --background: var(--background);
-  --color: var(--text-main);
+  --background: var(--ion-background-color);
+  --color: var(--ion-text-color);
   text-align: left;
   transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   
   ion-card-content {
     display: flex;
@@ -28,7 +28,7 @@ ion-card.view-switch__card:active {
 }
 
 ion-card.view-switch__card.active {
-  --background: var(--primary);
+  --background: var(--ion-color-primary);
   --color: white;
   box-shadow: 0 4px 16px rgba(56, 128, 255, 0.3);
 }
@@ -70,8 +70,8 @@ ion-card.view-switch__card.active {
   border: none;
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
-  background-color: var(--background);
-  color: var(--text-main);
+  background-color: var(--ion-background-color);
+  color: var(--ion-text-color);
   min-height: 44px;
   cursor: pointer;
   display: flex;
@@ -86,13 +86,13 @@ ion-card.view-switch__card.active {
 
 .sort-btn__arrow {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--ion-color-medium);
 }
 
 .total-price {
   font-weight: 600;
   font-size: 14px;
-  color: var(--text-main);
+  color: var(--ion-text-color);
 }
 
 @media (max-width: 768px) {
