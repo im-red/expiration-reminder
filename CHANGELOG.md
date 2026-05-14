@@ -1,3 +1,12 @@
+## [v1.1.1] - 2026-05-14
+
+### New Features
+- **UI Updates** - Minor UI updates
+- **Dark Mode** - Adapt to dark mode
+
+### Fixes
+- **Page Layout** - Fix page stretch issue
+
 ## [v1.1.0] - 2026-05-13
 
 ### New Features
