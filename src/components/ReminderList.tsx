@@ -6,7 +6,8 @@ import { ReminderItem } from '../models/reminder';
 import {
   computeRemainingPercent,
   formatRemainingLife,
-  getRemainingDays
+  getRemainingDays,
+  getStatusColor
 } from '../util/reminderCalculations';
 import './ReminderList.scss';
 
@@ -29,19 +30,17 @@ const ReminderList: React.FC<ReminderListProps> = ({ items, onSelect, emptyMessa
     <div className="reminder-list">
       {items.map(item => {
         const remainingDays = getRemainingDays(item);
-        const isExpired = remainingDays <= 0;
-        const isLow = remainingDays > 0 && remainingDays <= 30;
         const percent = computeRemainingPercent(remainingDays, item.shelfLifeDays);
 
         const hasProgressBar = !item.wasted && !item.consumed && typeof item.shelfLifeDays !== 'undefined' && typeof item.productionDate !== 'undefined';
 
-        const colorName = isExpired ? 'danger' : isLow ? 'warning' : 'primary';
+        const colorName = getStatusColor(remainingDays);
 
         let statusIcon = timeOutline;
         if (item.wasted) statusIcon = alertCircleOutline;
         else if (item.consumed) statusIcon = checkmarkCircleOutline;
-        else if (isExpired) statusIcon = alertCircleOutline;
-        else if (isLow) statusIcon = warningOutline;
+        else if (colorName === 'danger') statusIcon = alertCircleOutline;
+        else if (colorName === 'warning') statusIcon = warningOutline;
 
         return (
           <IonCard

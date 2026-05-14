@@ -26,8 +26,12 @@ export const formatRemainingLife = (remainingDays: number) => {
   if (!Number.isFinite(remainingDays)) {
     return '';
   }
-  if (remainingDays <= 0) {
-    return 'Expired';
+  if (remainingDays < 0) {
+    const expiredDays = Math.abs(remainingDays);
+    return `Expired for ${expiredDays} day${expiredDays > 1 ? 's' : ''}`;
+  }
+  if (remainingDays === 0) {
+    return 'Expired today';
   }
 
   if (remainingDays === 1) {
@@ -50,6 +54,13 @@ export const computeRemainingPercent = (
   }
 
   return Math.max(0, Math.min(100, (remainingDays / shelfLifeDays) * 100));
+};
+
+export const getStatusColor = (remainingDays: number) => {
+  if (!Number.isFinite(remainingDays)) return 'primary';
+  if (remainingDays <= 0) return 'danger';
+  if (remainingDays <= 30) return 'warning';
+  return 'primary';
 };
 
 export const sortByRemainingLife = (a: ReminderItem, b: ReminderItem) =>

@@ -23,7 +23,8 @@ import {
   addDays,
   computeRemainingPercent,
   formatRemainingLife,
-  getRemainingDays
+  getRemainingDays,
+  getStatusColor
 } from '../util/reminderCalculations';
 import { ellipsisVertical } from 'ionicons/icons';
 import './ReminderDetailOverlay.scss';
@@ -140,13 +141,13 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
               {!reminder.wasted && !reminder.consumed && typeof reminder.shelfLifeDays !== 'undefined' && (
                 <div className="ion-padding-bottom reminder-detail-progress-container">
                   <h2>
-                    <IonText color={isExpired ? 'danger' : percent <= 25 ? 'warning' : 'primary'}>
+                    <IonText color={getStatusColor(remainingDays)}>
                       {formatRemainingLife(remainingDays)}
                     </IonText>
                   </h2>
                   <IonProgressBar
                     value={percent / 100}
-                    color={isExpired ? 'danger' : percent <= 25 ? 'warning' : 'primary'}
+                    color={getStatusColor(remainingDays)}
                   />
                 </div>
               )}
