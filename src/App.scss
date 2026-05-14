@@ -12,6 +12,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+ion-content {
+  overflow-y: auto;
+}
+
 ion-list.edge-to-edge ion-item {
   --padding-start: 0.25rem;
   --padding-end: 0.25rem;
