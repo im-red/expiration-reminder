@@ -10,7 +10,9 @@
     "sync": "npx cap sync",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios",
-    "go": "vite build && npx cap sync && npx cap open android"
+    "go": "vite build && npx cap sync && npx cap open android",
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed"
   },
   "keywords": [
     "capacitor",
@@ -41,6 +43,7 @@
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
+    "@playwright/test": "^1.61.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",

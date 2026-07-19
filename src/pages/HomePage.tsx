@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -13,8 +13,10 @@ import {
   IonActionSheet,
   IonCard,
   IonCardContent,
+  IonFooter,
 } from '@ionic/react';
-import { add, swapVertical, timeOutline, alertCircleOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import { add, timeOutline, alertCircleOutline, checkmarkCircleOutline, close } from 'ionicons/icons';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useApp, ActiveSort, WastedSort, ConsumedSort } from '../data/AppContext';
 import CategoryFilter from '../components/CategoryFilter';
 import ReminderList from '../components/ReminderList';
@@ -35,6 +37,7 @@ const HomePage: React.FC = () => {
     sortState,
     setSortState,
     sortRemindersByKey,
+    batchUpdateReminders,
   } = useApp();
 
   const [viewMode, setViewMode] = useState<ViewMode>('active');
@@ -42,6 +45,10 @@ const HomePage: React.FC = () => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
+
+  // Multi-select state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const filteredActiveReminders = useMemo(() => {
     if (!selectedCategory) return activeReminders;
@@ -102,6 +109,65 @@ const HomePage: React.FC = () => {
     });
     setIsSortSheetOpen(false);
   };
+
+  const enterSelectionMode = useCallback((id: string) => {
+    Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  }, []);
+
+  const exitSelectionMode = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBatchWasted = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    await batchUpdateReminders(ids, {
+      wasted: true,
+      wastedAt: new Date().toISOString(),
+      consumed: false,
+      consumedAt: null,
+    });
+    exitSelectionMode();
+  }, [selectedIds, batchUpdateReminders, exitSelectionMode]);
+
+  const handleBatchConsumed = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    await batchUpdateReminders(ids, {
+      consumed: true,
+      consumedAt: new Date().toISOString(),
+      wasted: false,
+      wastedAt: null,
+    });
+    exitSelectionMode();
+  }, [selectedIds, batchUpdateReminders, exitSelectionMode]);
+
+  // Clear selection when view mode or category changes
+  const changeViewMode = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    setSelectedCategory('');
+    exitSelectionMode();
+  }, [exitSelectionMode]);
+
+  const changeCategory = useCallback((cat: string) => {
+    setSelectedCategory(cat);
+    exitSelectionMode();
+  }, [exitSelectionMode]);
 
   const getSortOptions = () => {
     if (viewMode === 'active') {
@@ -192,7 +258,7 @@ const HomePage: React.FC = () => {
           <IonCard
             button
             className={clsx('view-switch__card', { active: viewMode === 'active' })}
-            onClick={() => { setViewMode('active'); setSelectedCategory(''); }}
+            onClick={() => changeViewMode('active')}
           >
             <IonCardContent>
               <div className="view-switch__content">
@@ -204,7 +270,7 @@ const HomePage: React.FC = () => {
           <IonCard
             button
             className={clsx('view-switch__card', { active: viewMode === 'consumed' })}
-            onClick={() => { setViewMode('consumed'); setSelectedCategory(''); }}
+            onClick={() => changeViewMode('consumed')}
           >
             <IonCardContent>
               <div className="view-switch__content">
@@ -216,7 +282,7 @@ const HomePage: React.FC = () => {
           <IonCard
             button
             className={clsx('view-switch__card', { active: viewMode === 'wasted' })}
-            onClick={() => { setViewMode('wasted'); setSelectedCategory(''); }}
+            onClick={() => changeViewMode('wasted')}
           >
             <IonCardContent>
               <div className="view-switch__content">
@@ -231,7 +297,7 @@ const HomePage: React.FC = () => {
           <CategoryFilter
             categories={categories}
             selectedCategory={selectedCategory}
-            onChange={setSelectedCategory}
+            onChange={changeCategory}
           />
         )}
 
@@ -265,9 +331,15 @@ const HomePage: React.FC = () => {
                   ? 'Nothing in this category yet. Try adding one!'
                   : undefined
           }
+          selectionMode={selectionMode && viewMode === 'active'}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onLongPress={(id: string) => {
+            if (viewMode === 'active') enterSelectionMode(id);
+          }}
         />
 
-        {viewMode === 'active' && (
+        {viewMode === 'active' && !selectionMode && (
           <IonFab vertical="bottom" horizontal="end" slot="fixed">
             <IonFabButton onClick={() => setIsOverlayOpen(true)}>
               <IonIcon icon={add} />
@@ -300,6 +372,45 @@ const HomePage: React.FC = () => {
           onClose={() => setActiveReminderId(null)}
         />
       </IonContent>
+
+      {selectionMode && (
+        <IonFooter>
+          <IonToolbar className="selection-toolbar">
+            <IonButtons slot="start">
+              <IonFabButton
+                size="small"
+                onClick={exitSelectionMode}
+                className="selection-toolbar__cancel"
+              >
+                <IonIcon icon={close} />
+              </IonFabButton>
+            </IonButtons>
+            <IonTitle size="small" className="ion-text-center">
+              {selectedIds.size} selected
+            </IonTitle>
+            <IonButtons slot="end">
+              <IonFabButton
+                size="small"
+                color="primary"
+                onClick={handleBatchConsumed}
+                className="selection-toolbar__action"
+                disabled={selectedIds.size === 0}
+              >
+                <IonIcon icon={checkmarkCircleOutline} />
+              </IonFabButton>
+              <IonFabButton
+                size="small"
+                color="danger"
+                onClick={handleBatchWasted}
+                className="selection-toolbar__action"
+                disabled={selectedIds.size === 0}
+              >
+                <IonIcon icon={alertCircleOutline} />
+              </IonFabButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonFooter>
+      )}
     </IonPage>
   );
 };

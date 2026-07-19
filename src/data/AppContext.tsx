@@ -35,6 +35,7 @@ interface AppContextType {
   setSortState: React.Dispatch<React.SetStateAction<SortState>>;
   addReminder: (values: ReminderFormValues) => Promise<void>;
   updateReminder: (id: string, updates: Partial<ReminderItem>) => Promise<void>;
+  batchUpdateReminders: (ids: string[], updates: Partial<ReminderItem>) => Promise<void>;
   deleteReminder: (id: string) => Promise<void>;
   activeReminders: ReminderItem[];
   wastedReminders: ReminderItem[];
@@ -223,6 +224,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
+  const batchUpdateReminders = useCallback(async (ids: string[], updates: Partial<ReminderItem>) => {
+    const idSet = new Set(ids);
+    setReminders(prev =>
+      prev.map(reminder =>
+        idSet.has(reminder.id) ? { ...reminder, ...updates } : reminder
+      )
+    );
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+    } catch (error) {
+      console.warn('Unable to trigger haptic feedback', error);
+    }
+  }, []);
+
   const deleteReminder = useCallback(async (id: string) => {
     setReminders(prev => prev.filter(reminder => reminder.id !== id));
     try {
@@ -275,6 +290,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSortState,
       addReminder,
       updateReminder,
+      batchUpdateReminders,
       deleteReminder,
       activeReminders,
       wastedReminders,

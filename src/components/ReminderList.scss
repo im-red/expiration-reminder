@@ -19,13 +19,20 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     margin: 0;
     overflow: hidden;
-    
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    border: 2px solid transparent;
+
     ion-card-content {
       padding: 12px 16px;
     }
 
     .reminder-progress {
       height: 4px;
+    }
+
+    &.reminder-card--selected {
+      border-color: var(--ion-color-primary);
+      box-shadow: 0 4px 16px rgba(56, 128, 255, 0.2);
     }
   }
 
@@ -34,6 +41,7 @@
     font-size: 1.1rem;
     margin: 0;
     color: var(--ion-text-color);
+    flex: 1;
   }
 
   .reminder-price {
@@ -51,5 +59,10 @@
     align-items: center;
     gap: 4px;
     margin-top: 8px;
+  }
+
+  .reminder-checkbox {
+    margin-right: 10px;
+    --size: 22px;
   }
 }
