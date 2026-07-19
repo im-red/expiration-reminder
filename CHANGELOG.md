@@ -1,3 +1,9 @@
+## [v1.1.2] - 2026-07-19
+
+### New Features
+- **Multi-Select Mode** - Long press any active item to enter selection mode with haptic feedback. Tap to select/deselect multiple items, then batch mark them as consumed or wasted in one action.
+- **App Name** - Updated the application display name.
+
 ## [v1.1.1] - 2026-05-14
 
 ### New Features
