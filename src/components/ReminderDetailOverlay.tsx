@@ -17,7 +17,7 @@ import {
   IonIcon,
 } from '@ionic/react';
 import ReminderForm from './ReminderForm';
-import { ReminderItem } from '../models/reminder';
+import { ReminderItem, ReminderFormValues } from '../models/reminder';
 import { useApp } from '../data/AppContext';
 import {
   addDays,
@@ -40,14 +40,16 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { updateReminder, deleteReminder } = useApp();
+  const { updateReminder, deleteReminder, addReminder } = useApp();
   const [isEditing, setIsEditing] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false);
+      setIsDuplicating(false);
     }
   }, [isOpen]);
 
@@ -82,6 +84,12 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
     setIsEditing(false);
   };
 
+  const handleSubmitDuplicate = async (values: ReminderFormValues) => {
+    await addReminder(values);
+    setIsDuplicating(false);
+    onClose();
+  };
+
   const handleConfirmDelete = async () => {
     await deleteReminder(reminder.id);
     onClose();
@@ -102,15 +110,17 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
     onClose();
   };
 
+  const isFormMode = isEditing || isDuplicating;
+
   return (
     <>
       <IonModal isOpen={isOpen} onDidDismiss={onClose}>
         <IonHeader>
           <IonToolbar>
-            <IonTitle>{isEditing ? 'Edit Reminder' : reminder.name}</IonTitle>
+            <IonTitle>{isDuplicating ? 'Duplicate Reminder' : isEditing ? 'Edit Reminder' : reminder.name}</IonTitle>
             <IonButtons slot="end">
               <IonButton onClick={onClose}>Close</IonButton>
-              {!isEditing && (
+              {!isFormMode && (
                 <IonButton onClick={() => setShowActionSheet(true)}>
                   <IonIcon slot="icon-only" icon={ellipsisVertical} />
                 </IonButton>
@@ -120,19 +130,28 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
         </IonHeader>
 
         <IonContent className="ion-padding">
-          {isEditing ? (
+          {isFormMode ? (
             <>
               <p className="reminder-detail-description">
-                Adjust fields below and save to keep things accurate.
+                {isDuplicating
+                  ? 'Create a copy of this item. Adjust the fields below before saving.'
+                  : 'Adjust fields below and save to keep things accurate.'}
               </p>
               <ReminderForm
                 defaultValues={reminder}
-                submitLabel="Save changes"
-                onSubmit={handleSubmit}
+                submitLabel={isDuplicating ? 'Create duplicate' : 'Save changes'}
+                onSubmit={isDuplicating ? handleSubmitDuplicate : handleSubmit}
               />
               <div>
-                <IonButton expand="block" fill="clear" onClick={() => setIsEditing(false)}>
-                  Cancel Edit
+                <IonButton
+                  expand="block"
+                  fill="clear"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setIsDuplicating(false);
+                  }}
+                >
+                  {isDuplicating ? 'Cancel Duplicate' : 'Cancel Edit'}
                 </IonButton>
               </div>
             </>
@@ -237,6 +256,10 @@ const ReminderDetailOverlay: React.FC<ReminderDetailOverlayProps> = ({
           {
             text: 'Edit',
             handler: () => setIsEditing(true),
+          },
+          {
+            text: 'Duplicate',
+            handler: () => setIsDuplicating(true),
           },
           {
             text: 'Delete',
