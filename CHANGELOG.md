@@ -1,3 +1,8 @@
+## [v1.1.3] - 2026-11-05
+
+### New Features
+- **Duplicate Item** - Added a "Duplicate" option to the item menu, letting you create a copy of an existing item that you can edit before saving.
+
 ## [v1.1.2] - 2026-07-19
 
 ### New Features
